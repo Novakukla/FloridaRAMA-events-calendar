@@ -1,4 +1,4 @@
-<!-- Nova Kukla | Events Calander -->
+<!-- FloridaRAMA calendar -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,12 +6,12 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 
-  <!-- cute font (close to halau) -->
+  <!-- fun display font -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ====== root variables | brand palette ====== */
+    /* brand colors */
     :root
     {
       --brand-pink: #ef779f;
@@ -20,9 +20,7 @@
       --brand-yellow: #f8c964;
       --brand-orange: #f47948;
     }
-    /* -------------------------------------------- */
-
-    /* =============== base layout styles =============== */
+    /* base layout */
     body
     {
       margin: 0;
@@ -33,13 +31,13 @@
       color: #333;
     }
 
-    /* Prevent page overflow/scrollbars, but allow the calendar to manage its own scrolling */
+    /* hide page scrollbars, let calendar handle scroll */
     html, body
     {
       height: 100%;
       overflow: hidden;
-      -ms-overflow-style: none; /* IE/Edge legacy */
-      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* old IE/Edge */
+      scrollbar-width: none; /* firefox */
     }
 
     html::-webkit-scrollbar,
@@ -63,14 +61,13 @@
     body,
     #fr-events-calendar{ height: 100%; }
 
-    /* Debug message area (hidden unless an error occurs) */
+    /* only show this if loading fails */
     #fr-debug { display: none; }
-    /* --------------------------------------------------- */
 
-    /* ======= styles for day cells / grid ======= */
+    /* day cells */
     .fc-daygrid-day-frame
     {
-      min-height: 130px; /* event frame height */
+      min-height: 130px; /* card space */
       background-color: #fffdf7;
       border: none;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
@@ -89,9 +86,7 @@
       color: var(--brand-green);
       margin: 2px;
     }
-    /* -------------------------------------------- */
-
-    /* ====== styles for events in the grid ====== */
+    /* events in grid */
     .fc-daygrid-day-events
     {
       max-height: none !important;
@@ -129,9 +124,7 @@
       box-sizing: border-box;
       margin: 0;
     }
-    /* ------------------------------------------ */
-
-    /* == styles for event card content == */
+    /* event card content */
     .fr-event-card
     {
       display: flex;
@@ -140,13 +133,13 @@
       color: #fff;
       width: 100%;
       box-sizing: border-box;
-      min-height: 200px; /* adjust */
+      min-height: 200px;
     }
 
     .fr-event-card img
     {
       width: 100%;
-      height: 150px; /* adjust */
+      height: 150px;
       object-fit: cover;
       display: block;
     }
@@ -155,7 +148,7 @@
     {
       padding: 6px;
       font-weight: 600;
-      font-size: 15px; /* adjust */
+      font-size: 15px;
     }
 
     .fr-event-time
@@ -164,9 +157,7 @@
       font-size: 12px;
       opacity: 0.9;
     }
-    /* ---------------------------------- */
-
-    /* ================== styles for highlighting today ================== */
+    /* highlight today */
     .fc-day-today .fc-daygrid-day-frame
     {
       background: linear-gradient(135deg, rgba(248,201,100,0.35), #fffdf7);
@@ -180,9 +171,7 @@
       color: var(--brand-pink);
       font-weight: 700;
     }
-    /* ------------------------------------------------------------------- */
-
-    /* ========== mobile styles: thumbnail-only cards ========== */
+    /* mobile: image-only cards */
     @media (max-width: 600px)
     {
       .fc-daygrid-day-frame { min-height: auto; padding: 2px; }
@@ -211,7 +200,6 @@
         display: block;
       }
     }
-    /* ------------------------------------------------------ */
   </style>
 </head>
 
@@ -220,7 +208,7 @@
   <div id="fr-debug" style="font-size:12px;padding:6px 8px;color:#333;"></div>
 
   <script>
-    // ============== data loading and calendar setup ==============
+    // load events + build calendar
     document.addEventListener('DOMContentLoaded', async function ()
     {
       const calendarEl = document.getElementById('fr-events-calendar');
@@ -234,7 +222,7 @@
         debugEl.style.display = 'block';
       }
 
-      // array for events loaded from json
+      // events from local json
       let events = [];
       try
       {
@@ -248,14 +236,14 @@
         setDebug('Failed to load events. Please try again later.', true);
       }
 
-      // create calendar instance
+      // spin up calendar
       const calendar = new FullCalendar.Calendar(calendarEl,
       {
         initialView: 'dayGridMonth',
         height: '100%',
         events: events,
 
-        // open fareharbor or detail url in new tab
+        // open event link in new tab
         eventClick: function (info)
         {
           if (info.event.url)
@@ -265,14 +253,14 @@
           }
         },
 
-        // ===================== custom rendering for event cards =====================
+        // custom event card UI
         eventContent: function (info)
         {
           const props = info.event.extendedProps;
           const thumbnail = props.thumbnail;
           const title = info.event.title;
 
-          // build color palette from css custom properties
+          // grab color palette from CSS vars
           const palette =
           [
             getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
@@ -282,16 +270,16 @@
             getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
           ];
 
-          // pick random brand color for this card
+          // pick a random brand color
           const color = palette[Math.floor(Math.random() * palette.length)];
 
-          // create card container
+          // build card shell
           const container = document.createElement('div');
           container.className = 'fr-event-card';
           container.style.background =
             `linear-gradient(135deg, ${color} 0%, ${color} 80%, rgba(255,255,255,0.15) 100%)`;
 
-          // add thumbnail if present
+          // add image if we have one
           if (thumbnail)
           {
             const img = document.createElement('img');
@@ -300,22 +288,20 @@
             container.appendChild(img);
           }
 
-          // add title text
+          // add title
           const titleEl = document.createElement('div');
           titleEl.className = 'fr-event-title';
           titleEl.textContent = title;
           container.appendChild(titleEl);
 
-          // return dom nodes for fullcalendar to render
+          // hand back card DOM
           return { domNodes: [container] };
         }
-        // ----------------------------------------------------------------------------
       });
 
-      // render calendar into dom
+      // render it
       calendar.render();
     });
-    // -------------------------------------------------------------
   </script>
 </body>
 </html>

@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 /**
- * Syncs events.json from FareHarbor's public embed pages.
+ * Sync events.json from FareHarbor public embed pages.
  *
- * This is intentionally "no-API-key" and conservative:
- * - It scrapes the public items listing page and each item's page.
- * - For each item, it grabs the NEXT visible availability date (the "Prices for ..." link).
- * - It generates one calendar entry per item (next occurrence).
+ * No API key needed.
+ * - Scrapes the item listing page + each item page.
+ * - Grabs the next visible availability date.
+ * - Writes one calendar entry per item.
  *
- * Usage (from repo root):
+ * Usage (repo root):
  *   node scripts/sync_fareharbor_events.mjs           (dry run)
  *   node scripts/sync_fareharbor_events.mjs --write   (update events.json)
  *
- * By default, --write OVERWRITES the target file so it matches FareHarbor exactly.
- * If you need to preserve non-FareHarbor/manual events, opt-in with:
+ * `--write` overwrites the target to match FareHarbor.
+ * Need to keep manual/non-FareHarbor events? Use:
  *   node scripts/sync_fareharbor_events.mjs --write --merge-existing
  *
- * Targeting a different events.json (CI / worktrees):
+ * Use a different events file if needed:
  *   node scripts/sync_fareharbor_events.mjs --write --events-file path/to/events.json
  *
- * Optional env:
+ * Optional env vars:
  *   FAREHARBOR_COMPANY=floridarama
  *   FAREHARBOR_FLOW=1438415
  *   FAREHARBOR_TZ=America/New_York
@@ -88,7 +88,7 @@ function extractMetaContent(html, attrName, attrValue) {
 }
 
 function extractTitleFromHtml(html) {
-	// Prefer <h1>, else <title>, else og:title.
+	// Try h1 first, then og:title, then title.
 	const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
 	if (h1) return decodeHtmlEntities(h1[1].replaceAll(/<[^>]+>/g, " "));
 
@@ -102,7 +102,7 @@ function extractTitleFromHtml(html) {
 }
 
 function extractBestImageFromHtml(html, pageUrl) {
-	// JSON-LD often contains the real item image.
+	// JSON-LD usually has the real image.
 	for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
 		const txt = (m[1] || "").trim();
 		if (!txt) continue;
@@ -118,11 +118,11 @@ function extractBestImageFromHtml(html, pageUrl) {
 					const abs = new URL(pick, pageUrl).toString();
 					if (!/marketing\.fareharbor\.com\/wp-content\/uploads\//i.test(abs) && !/fh-og/i.test(abs)) return abs;
 				} catch {
-					// ignore
+					// skip bad URL
 				}
 			}
 		} catch {
-			// ignore
+			// skip bad JSON-LD
 		}
 	}
 
@@ -137,16 +137,16 @@ function extractBestImageFromHtml(html, pageUrl) {
 		return /marketing\.fareharbor\.com\/wp-content\/uploads\//i.test(s) || /fh-og/i.test(s);
 	};
 
-	// Prefer og/twitter only if it isn't the generic FareHarbor icon.
+	// Use og/twitter if it's not the generic icon.
 	if (og && !isGenericFareharborThumb(og)) {
 		try {
 			return new URL(og, pageUrl).toString();
 		} catch {
-			// ignore
+			// skip bad URL
 		}
 	}
 
-	// Try common patterns in the HTML for real item images.
+	// Try common image patterns in page HTML.
 	const candidates = [];
 
 	for (const m of html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)) {
@@ -166,11 +166,11 @@ function extractBestImageFromHtml(html, pageUrl) {
 			const abs = new URL(c, pageUrl).toString();
 			return abs;
 		} catch {
-			// ignore
+			// skip bad URL
 		}
 	}
 
-	// Last resort: allow generic og image.
+	// Last fallback: generic og image.
 	if (!og) return null;
 	try {
 		return new URL(og, pageUrl).toString();
@@ -180,7 +180,7 @@ function extractBestImageFromHtml(html, pageUrl) {
 }
 
 function todayYmdInTimeZone(timeZone) {
-	// en-CA gives YYYY-MM-DD
+	// en-CA gives YYYY-MM-DD format
 	return new Intl.DateTimeFormat("en-CA", {
 		timeZone,
 		year: "numeric",
@@ -190,8 +190,7 @@ function todayYmdInTimeZone(timeZone) {
 }
 
 function parsePricesForAnchor(html) {
-	// Example HTML pattern (approx):
-	// Prices for <a href=".../availability/1770373765/book/?...">Saturday, January 31, 2026</a>
+	// Looks like: Prices for <a ...>Saturday, January 31, 2026</a>
 	const m = html.match(
 		/Prices\s+for\s*<a[^>]+href=["']([^"']*\/availability\/\d+\/book\/[^"']*)["'][^>]*>([^<]+)<\/a>/i
 	);
@@ -200,7 +199,7 @@ function parsePricesForAnchor(html) {
 }
 
 function parseDateLabelToYmd(dateLabel) {
-	// Expected: "Saturday, January 31, 2026" (weekday optional)
+	// Expects "Saturday, January 31, 2026" (weekday optional)
 	const text = String(dateLabel).trim();
 	const m = text.match(/(?:\w+\s*,\s*)?([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/);
 	if (!m) return null;
@@ -246,11 +245,7 @@ function parseEventTimeRange(html) {
 		return null;
 	};
 
-	// Match common time-range formats anywhere in the page text:
-	// - "Event is 10AM - 12PM"
-	// - "6pm–10pm", "6 PM to 10 PM", "6-10PM", "6:00PM - 10:00PM"
-	// Notes:
-	// - At least one side must include AM/PM; if one side omits it, infer from the other.
+	// Match common time ranges from page text.
 	const rangeRe =
 		/(?:\bEvent\s+is\b|\bHours\b|\bTime\b|\bWhen\b|\bSchedule\b|\bDuration\b)?[^\d]{0,20}(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)?\s*(?:-|–|—|to)\s*(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)?/i;
 
@@ -260,11 +255,11 @@ function parseEventTimeRange(html) {
 	let sap = normAp(sapRaw);
 	let eap = normAp(eapRaw);
 
-	// Infer AM/PM if one side omits it.
+	// If one side is missing AM/PM, borrow it.
 	if (!sap && eap) sap = eap;
 	if (!eap && sap) eap = sap;
 
-	// If neither has AM/PM, ignore (too ambiguous).
+	// If both are missing AM/PM, too fuzzy.
 	if (!sap || !eap) return null;
 
 	return {
@@ -287,7 +282,7 @@ function parseStartTimeAndDuration(text) {
 		return null;
 	};
 
-	// Example from FareHarbor: "6:00 PM" and "2 Hours • Ages 13+"
+	// Example: "6:00 PM" + "2 Hours"
 	const startM = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)\b/i);
 	if (!startM) return null;
 	const sh = Number(startM[1]);
@@ -369,13 +364,12 @@ async function getItemUrlsFromListing(listingUrl) {
 		.map(normalizeFareharborUrl)
 		.filter((u) => u.includes(`/embeds/book/${COMPANY}/items/`));
 
-	// If static HTML already contains item URLs, prefer that.
-	// It avoids occasional Playwright listing-page flakiness and is usually sufficient.
+	// If static HTML has item URLs, use those.
 	if (itemUrls.length > 0) {
 		return { itemUrls: [...new Set(itemUrls)], usedBrowser: false };
 	}
 
-	// FareHarbor often renders the item cards via JS; fall back to a headless browser.
+	// If not, use headless browser render.
 	return await withPlaywright(async ({ context }) => {
 		const page = await context.newPage();
 		try {
@@ -396,7 +390,7 @@ async function getItemUrlsFromListing(listingUrl) {
 						if (!/\/items\/\d+\/?/i.test(u.pathname)) continue;
 						out.push(u.toString());
 					} catch {
-						// ignore
+						// skip bad link
 					}
 				}
 				return out;
@@ -417,7 +411,7 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 		await page.waitForTimeout(1500);
 		await page.waitForLoadState("networkidle").catch(() => {});
 
-		// Wait a bit for template placeholders to resolve.
+		// Wait until template placeholders resolve.
 		await page
 			.waitForFunction(() => {
 				const h1 = document.querySelector("h1");
@@ -455,7 +449,7 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 				meta("name", "twitter:image") ||
 				meta("property", "twitter:image");
 
-			// Try JSON-LD first (often contains real images).
+			// JSON-LD first.
 			let jsonLdThumb = null;
 			for (const s of Array.from(document.querySelectorAll('script[type="application/ld+json"]')).slice(0, 8)) {
 				const txt = (s.textContent || "").trim();
@@ -475,12 +469,12 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 					}
 					if (jsonLdThumb) break;
 				} catch {
-					// ignore
+					// skip bad JSON-LD
 				}
 				if (jsonLdThumb) break;
 			}
 
-			// Try to find a better thumbnail from real page content.
+			// Try to find a better real-page thumbnail.
 			const candidates = [];
 			if (jsonLdThumb) candidates.push({ url: jsonLdThumb, score: 10_000_000 });
 			if (metaThumb) candidates.push({ url: normalizeUrl(metaThumb), score: 10 });
@@ -496,7 +490,7 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 				candidates.push({ url: src, score: (area || 1) + (inHero ? 5_000_000 : 0) });
 			}
 
-			// Background images (limit scope: inline styles + common hero containers)
+			// Also check background images.
 			const bgEls = Array.from(
 				document.querySelectorAll('[style*="background"],.fh-item__image,.item-image,.hero,.gallery,.carousel,.slider')
 			).slice(0, 120);
@@ -521,7 +515,7 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 
 			const thumbnail = best?.url || normalizeUrl(metaThumb);
 
-			// Pick the first visible availability link.
+			// Grab first visible availability link.
 			const links = Array.from(document.querySelectorAll("a"));
 			const a = links.find((x) => {
 				const href = x.getAttribute("href") || "";
@@ -547,19 +541,19 @@ function extractItemUrlsFromItemsListing(html) {
 	for (const m of html.matchAll(/https:\/\/fareharbor\.com\/embeds\/book\/[^\s"']+\/items\/\d+\/?[^"'\s<]*/gi)) {
 		urls.add(m[0]);
 	}
-	// Also accept relative links.
+	// Also handle relative links.
 	for (const m of html.matchAll(/href=["'](\/embeds\/book\/[\w-]+\/items\/\d+\/?[^"']*)["']/gi)) {
 		try {
 			urls.add(new URL(m[1], "https://fareharbor.com").toString());
 		} catch {
-			// ignore
+			// skip bad link
 		}
 	}
 	return [...urls];
 }
 
 function normalizeFareharborUrl(url) {
-	// Ensure full URL, and keep full-items+flow query if present.
+	// Make URL absolute.
 	try {
 		return new URL(url, "https://fareharbor.com").toString();
 	} catch {
@@ -648,9 +642,7 @@ async function main() {
 			let bodyText = html;
 			let trFromText = parseEventTimeRange(bodyText || "") || parseStartTimeAndDuration(bodyText || "");
 
-			// If we can't read availability and/or can't extract a time from static HTML,
-			// fall back to Playwright for this item to read rendered text.
-			// Use a fresh browser per item so a crash doesn't poison the whole run.
+			// If static HTML misses data, use browser render fallback.
 			if (!prices || !trFromText) {
 				let dom;
 				try {
@@ -659,7 +651,7 @@ async function main() {
 					});
 				} catch (err) {
 					console.warn(`  Skipping (browser fallback failed): ${err?.message || err}`);
-					// If we already have availability from static HTML, keep going with defaults.
+					// If availability exists, keep going with fallback defaults.
 					if (!prices) continue;
 				}
 
@@ -711,7 +703,7 @@ async function main() {
 
 	await processItems();
 
-	// Remove undefined fields and obvious duplicates
+	// Clean + dedupe
 	const byKey = new Map();
 	for (const e of scraped) {
 		const clean = {
@@ -728,7 +720,7 @@ async function main() {
 
 	const todayYmd = todayYmdInTimeZone(TIME_ZONE);
 	const out = [...keep, ...byKey.values()].filter((e) => {
-		// Keep the "kept" non-FareHarbor events as-is; filter FareHarbor events by date.
+		// Keep manual kept events; filter FareHarbor by date.
 		if (keep.length && !isFareharborEvent(e)) return true;
 		const endYmd = String(e.end || e.start || "").slice(0, 10);
 		return endYmd && endYmd >= todayYmd;
