@@ -16,7 +16,7 @@
  *   node scripts/sync_fareharbor_events.mjs --write --merge-existing
  *
  * Targeting a different events.json (CI / worktrees):
- *   node scripts/sync_fareharbor_events.mjs --browser --write --events-file path/to/events.json
+ *   node scripts/sync_fareharbor_events.mjs --write --events-file path/to/events.json
  *
  * Optional env:
  *   FAREHARBOR_COMPANY=floridarama
@@ -48,10 +48,6 @@ const DEFAULT_EVENTS_FILE = fileURLToPath(
 	new URL("../events.json", import.meta.url)
 );
 const EVENTS_FILE = getArgValue("--events-file") || process.env.EVENTS_FILE || DEFAULT_EVENTS_FILE;
-
-const USE_PLAYWRIGHT =
-	process.argv.includes("--browser") ||
-	process.env.USE_PLAYWRIGHT === "1";
 
 function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -352,7 +348,7 @@ async function withPlaywright(fn) {
 		pw = await import("playwright");
 	} catch (err) {
 		throw new Error(
-			"Playwright is not installed. Run `npm install` at repo root, or run without --browser."
+			"Playwright is not installed. Run `npm install` at repo root."
 		);
 	}
 
@@ -655,7 +651,7 @@ async function main() {
 			// If we can't read availability and/or can't extract a time from static HTML,
 			// fall back to Playwright for this item to read rendered text.
 			// Use a fresh browser per item so a crash doesn't poison the whole run.
-			if ((!prices || !trFromText) && USE_PLAYWRIGHT) {
+			if (!prices || !trFromText) {
 				let dom;
 				try {
 					dom = await withPlaywright(async ({ context }) => {

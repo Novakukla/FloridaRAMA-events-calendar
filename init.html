@@ -63,9 +63,8 @@
     body,
     #fr-events-calendar{ height: 100%; }
 
-    /* Debug is off by default (public-facing) */
+    /* Debug message area (hidden unless an error occurs) */
     #fr-debug { display: none; }
-    .fr-debug-enabled #fr-debug { display: block; }
     /* --------------------------------------------------- */
 
     /* ======= styles for day cells / grid ======= */
@@ -227,59 +226,26 @@
       const calendarEl = document.getElementById('fr-events-calendar');
       const debugEl = document.getElementById('fr-debug');
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const debugEnabled = urlParams.get('debug') === '1';
-      if (debugEnabled)
-      {
-        document.documentElement.classList.add('fr-debug-enabled');
-      }
-
       function setDebug(msg, isError = false)
       {
-        if (!debugEnabled || !debugEl) return;
+        if (!debugEl) return;
         debugEl.textContent = msg;
         debugEl.style.color = isError ? '#b00020' : '#333';
+        debugEl.style.display = 'block';
       }
-
-      const eventsOverride = urlParams.get('events');
-
-      const sameDirEventsUrl = window.location.protocol === 'file:'
-        ? null
-        : new URL('events.json', window.location.href).toString();
-
-      // Fallback: hardcoded raw GitHub URL for this repo.
-      const defaultEventsUrl = 'https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/refs/heads/main/events.json';
-
-      const candidateEventUrls = [eventsOverride, sameDirEventsUrl, defaultEventsUrl].filter(Boolean);
-      const uniqueCandidateEventUrls = [...new Set(candidateEventUrls)];
 
       // array for events loaded from json
       let events = [];
-      let loadedFrom = null;
-      for (const candidateUrl of uniqueCandidateEventUrls)
+      try
       {
-        try
-        {
-          const res = await fetch(candidateUrl, { cache: 'no-store' });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          events = await res.json();
-          loadedFrom = candidateUrl;
-          break;
-        }
-        catch (err)
-        {
-          console.warn(`Failed to load events.json from ${candidateUrl}`, err);
-        }
+        const response = await fetch('./events.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        events = await response.json();
       }
-
-      if (!loadedFrom)
+      catch (err)
       {
-        console.error('Error loading events.json (all sources failed)', { tried: uniqueCandidateEventUrls });
-        setDebug(`Failed to load events.json. Tried: ${uniqueCandidateEventUrls.join(' | ')}`, true);
-      }
-      else
-      {
-        setDebug(`Loaded ${events.length} event(s) from ${loadedFrom}`);
+        console.error('Failed to load ./events.json', err);
+        setDebug('Failed to load events. Please try again later.', true);
       }
 
       // create calendar instance
