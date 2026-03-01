@@ -1,30 +1,3 @@
-#!/usr/bin/env node
-/**
- * Sync events.json from FareHarbor public embed pages.
- *
- * No API key needed.
- * - Scrapes the item listing page + each item page.
- * - Grabs the next visible availability date.
- * - Writes one calendar entry per item.
- *
- * Usage (repo root):
- *   node scripts/sync_fareharbor_events.mjs           (dry run)
- *   node scripts/sync_fareharbor_events.mjs --write   (update events.json)
- *
- * `--write` overwrites the target to match FareHarbor.
- * Need to keep manual/non-FareHarbor events? Use:
- *   node scripts/sync_fareharbor_events.mjs --write --merge-existing
- *
- * Use a different events file if needed:
- *   node scripts/sync_fareharbor_events.mjs --write --events-file path/to/events.json
- *
- * Optional env vars:
- *   FAREHARBOR_COMPANY=floridarama
- *   FAREHARBOR_FLOW=1438415
- *   FAREHARBOR_TZ=America/New_York
- *   EVENTS_FILE=path/to/events.json
- */
-
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
