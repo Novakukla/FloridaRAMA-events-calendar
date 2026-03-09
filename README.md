@@ -6,7 +6,7 @@ This project keeps the site fast, simple, and low-maintenance:
 
 - Static front-end (`init.html`) for clean embedding in Wix.
 - Automated FareHarbor sync into `events.json`.
-- Zero manual event editing in data.
+- Optional manual events in `manual-events.json` for non-bookable dates.
 
 ## Why this is cool
 
@@ -37,6 +37,33 @@ What it does:
 - Installs dependencies with `npm ci`.
 - Runs `node scripts/sync_fareharbor_events.mjs --write`.
 - Commits and pushes `events.json` only when changes are detected.
+
+## Manual Non-Bookable Events
+
+You can add extra non-bookable events directly in `manual-events.json`.
+
+- `init.html` loads both `events.json` and `manual-events.json` and merges them.
+- If `manual-events.json` is missing, the calendar still loads FareHarbor events normally.
+- Manual events are ideal for open days, special hours, and internal/promotional dates that should not exist in FareHarbor.
+
+Example event object:
+
+```json
+{
+	"id": "open-day-2026-03-20",
+	"title": "Open Day",
+	"start": "2026-03-20T10:00:00",
+	"end": "2026-03-20T20:00:00",
+	"url": "https://floridarama.com/visit",
+	"thumbnail": "https://example.com/open-day.jpg"
+}
+```
+
+Notes:
+
+- Required fields: `title`, `start`
+- Recommended: `id` (prevents accidental duplicates)
+- Optional: `end`, `url`, `thumbnail`
 
 ## Local Run (Optional)
 

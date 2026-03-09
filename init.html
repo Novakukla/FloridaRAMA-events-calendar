@@ -222,17 +222,63 @@
         debugEl.style.display = 'block';
       }
 
-      // events from local json
+      async function loadJsonArray(path)
+      {
+        try
+        {
+          const response = await fetch(path, { cache: 'no-store' });
+          if (!response.ok)
+          {
+            if (response.status === 404) return [];
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          return Array.isArray(data) ? data : [];
+        }
+        catch (err)
+        {
+          console.error(`Failed to load ${path}`, err);
+          return [];
+        }
+      }
+
+      // merge FareHarbor-synced events with manually managed events
       let events = [];
       try
       {
-        const response = await fetch('./events.json', { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        events = await response.json();
+        const [syncedEvents, manualEvents] = await Promise.all([
+          loadJsonArray('./events.json'),
+          loadJsonArray('./manual-events.json')
+        ]);
+
+        const merged = [...syncedEvents, ...manualEvents];
+        const byKey = new Map();
+
+        for (const event of merged)
+        {
+          if (!event || typeof event !== 'object') continue;
+
+          const title = typeof event.title === 'string' ? event.title.trim() : '';
+          const start = typeof event.start === 'string' ? event.start : '';
+          if (!title || !start) continue;
+
+          const key =
+            (typeof event.id === 'string' && event.id.trim())
+              ? `id:${event.id.trim()}`
+              : `${title}::${start}::${event.end || ''}`;
+
+          byKey.set(key, event);
+        }
+
+        events = Array.from(byKey.values()).sort(
+          (a, b) => String(a.start || '').localeCompare(String(b.start || ''))
+        );
       }
+
       catch (err)
       {
-        console.error('Failed to load ./events.json', err);
+        console.error('Failed to load calendar data files', err);
         setDebug('Failed to load events. Please try again later.', true);
       }
 
