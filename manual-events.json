@@ -1,23 +1,9 @@
 [
   {
-    "id": "robot-artwalk",
-    "title": "Robot Show / Artwalk",
-    "start": "2026-03-14T12:00:00",
-    "end": "2026-03-14T20:00:00",
-    "thumbnail": "https://cdn.filestackcontent.com/Hd1t3EwSRCrHgnOZY5ZT/convert?cache=true&compress=true&quality=90&format=webp&rotate=exif&w=1000&fit=max"
-  },
-  {
-    "id": "bonus-day-2026-03-17",
-    "title": "Spring Break Bonus Days",
-    "start": "2026-03-17T12:00:00",
-    "end": "2026-03-17T20:00:00",
-    "thumbnail": "https://static.wixstatic.com/media/400eb0_91424285d2ef4353aec01c907c3b71dc~mv2.png"
-  },
-  {
-    "id": "bonus-day-2026-03-18",
-    "title": "Spring Break Bonus Days",
-    "start": "2026-03-18T12:00:00",
-    "end": "2026-03-18T20:00:00",
-    "thumbnail": "https://static.wixstatic.com/media/400eb0_91424285d2ef4353aec01c907c3b71dc~mv2.png"
+    "id": "record-day-4-18",
+    "title": "Record Store Day Deal",
+    "start": "2026-04-18T11:00:00",
+    "end": "2026-04-18T20:00:00",
+    "thumbnail": "https://static.wixstatic.com/media/400eb0_b060755977e5488aa6d6cee05b6aaf58~mv2.png"
   }
 ]
