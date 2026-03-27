@@ -130,7 +130,6 @@
     const DEFAULT_OWNER = 'novakukla';
     const DEFAULT_REPO = 'FloridaRAMA-events-calendar';
     const DEFAULT_BASE = 'main';
-    const DEFAULT_BASE = 'main';
 
     const el = id => document.getElementById(id);
 
@@ -184,9 +183,15 @@
       el('preview').textContent = pretty;
     }
 
-    document.getElementById('previewBtn').addEventListener('click', updatePreview);
+    el('previewBtn').addEventListener('click', updatePreview);
     // live updates as user types
     ['title','start','end','thumbnail'].forEach(id=>el(id).addEventListener('input', refreshLivePreview));
+
+    // Initialize preview state on load
+    window.addEventListener('DOMContentLoaded', ()=>{
+      refreshLivePreview();
+      updatePreview();
+    });
 
     
 
