@@ -6,6 +6,7 @@ on:
 
 jobs:
   merge-manual:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,7 +29,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet --exit-code manual-events.json; then
             git add manual-events.json
-            git commit -m "Build manual-events.json from manual-events/"
+            git commit -m "Build manual-events.json from manual-events/ [skip ci]"
             git push origin HEAD:main
           else
             echo "No changes to manual-events.json"
