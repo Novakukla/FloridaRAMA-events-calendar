@@ -130,6 +130,7 @@
     const DEFAULT_OWNER = 'novakukla';
     const DEFAULT_REPO = 'FloridaRAMA-events-calendar';
     const DEFAULT_BASE = 'main';
+    const DEFAULT_BASE = 'main';
 
     const el = id => document.getElementById(id);
 
@@ -212,7 +213,8 @@
       // Prefill the new-file editor on GitHub with the JSON content so the user can propose the file/PR.
       const json = JSON.stringify(ev, null, 2) + "\n";
       const params = new URLSearchParams({filename, value: json});
-      const url = `https://github.com/${owner}/${repo}/new/${encodeURIComponent(branch)}?${params.toString()}`;
+      // Use the repository's default branch as the new-file base so GitHub shows the "Create a new file" editor
+      const url = `https://github.com/${owner}/${repo}/new/${encodeURIComponent(DEFAULT_BASE)}?${params.toString()}`;
       window.open(url, '_blank');
     });
 
