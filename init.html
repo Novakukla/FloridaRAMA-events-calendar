@@ -76,7 +76,7 @@
       display: flex;
       gap: 20px;
       padding: 0 20px 30px;
-      max-width: 1200px;
+      max-width: 1600px;
       margin: 0 auto;
       justify-content: center;
       flex-wrap: wrap;
@@ -84,8 +84,8 @@
 
     .fr-featured-card
     {
-      flex: 1 1 300px;
-      max-width: 380px;
+      flex: 1 1 calc(33.333% - 14px);
+      max-width: calc(33.333% - 14px);
       border-radius: 16px;
       overflow: hidden;
       position: relative;
@@ -103,7 +103,7 @@
     .fr-featured-card-img
     {
       width: 100%;
-      height: 220px;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
       display: block;
     }
@@ -111,7 +111,6 @@
     .fr-featured-card-body
     {
       padding: 12px 14px;
-      background: #111;
       color: #fff;
       font-family: 'Baloo 2', sans-serif;
     }
@@ -171,7 +170,7 @@
     {
       .fr-featured-grid { flex-direction: column; align-items: center; }
       .fr-featured-card { max-width: 95%; }
-      .fr-featured-card-img { height: 180px; }
+      .fr-featured-card-img { aspect-ratio: 16 / 9; }
     }
 
     /* only show this if loading fails */
@@ -421,8 +420,18 @@
               card.appendChild(img);
             }
 
+            const brandColors = [
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
+            ];
+            const randColor = brandColors[Math.floor(Math.random() * brandColors.length)];
+
             const body = document.createElement('div');
             body.className = 'fr-featured-card-body';
+            body.style.background = randColor;
 
             const title = document.createElement('div');
             title.className = 'fr-featured-card-title';
@@ -453,7 +462,7 @@
             {
               const btn = document.createElement('a');
               btn.className = 'fr-featured-card-btn';
-              btn.textContent = 'Select date';
+              btn.textContent = 'Get Tickets';
               btn.href = item.url;
               btn.target = '_blank';
               btn.addEventListener('click', (e) => e.stopPropagation());
