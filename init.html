@@ -212,17 +212,9 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 24px;
+        padding: 16px;
         text-align: center;
         box-sizing: border-box;
-      }
-
-      .fr-featured-card-back-title {
-        font-family: 'Baloo 2', sans-serif;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #fff;
-        margin-bottom: 10px;
       }
 
       .fr-featured-card-back-desc {
@@ -231,8 +223,8 @@
         color: rgba(255,255,255,0.9);
         line-height: 1.5;
         white-space: pre-line;
-        margin-bottom: 16px;
-        max-height: 120px;
+        margin-bottom: 12px;
+        flex: 1;
         overflow-y: auto;
       }
 
@@ -241,24 +233,17 @@
         background: var(--brand-pink);
         color: #fff;
         border: none;
-        padding: 10px 24px;
-        border-radius: 10px;
+        padding: 6px 16px;
+        border-radius: 8px;
         font-family: 'Baloo 2', sans-serif;
-        font-size: 0.95rem;
+        font-size: 0.8rem;
         font-weight: 600;
         cursor: pointer;
         text-decoration: none;
         transition: background 0.2s;
-        margin-bottom: 8px;
+        flex-shrink: 0;
       }
       .fr-featured-card-back-btn:hover { background: var(--brand-orange); }
-
-      .fr-featured-card-back-tap {
-        font-family: 'Baloo 2', sans-serif;
-        font-size: 0.75rem;
-        color: rgba(255,255,255,0.6);
-        margin-top: 6px;
-      }
 
       .fr-featured-card-img { aspect-ratio: 16 / 9; }
     }
@@ -955,11 +940,6 @@
               back.className = 'fr-featured-card-back';
               back.style.background = randColor;
 
-              const backTitle = document.createElement('div');
-              backTitle.className = 'fr-featured-card-back-title';
-              backTitle.textContent = item.title;
-              back.appendChild(backTitle);
-
               const backDesc = document.createElement('div');
               backDesc.className = 'fr-featured-card-back-desc';
               backDesc.textContent = item.description;
@@ -975,11 +955,6 @@
                 backBtn.addEventListener('click', (e) => e.stopPropagation());
                 back.appendChild(backBtn);
               }
-
-              const tapHint = document.createElement('div');
-              tapHint.className = 'fr-featured-card-back-tap';
-              tapHint.textContent = 'Tap to flip back';
-              back.appendChild(tapHint);
 
               inner.appendChild(back);
               card.appendChild(inner);
