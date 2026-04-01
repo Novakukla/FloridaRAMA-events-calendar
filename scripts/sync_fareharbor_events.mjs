@@ -74,6 +74,36 @@ function extractTitleFromHtml(html) {
 	return null;
 }
 
+function extractDescriptionFromHtml(html) {
+	// Try JSON-LD description first.
+	for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+		const txt = (m[1] || "").trim();
+		if (!txt) continue;
+		try {
+			const data = JSON.parse(txt);
+			const objs = Array.isArray(data) ? data : [data];
+			for (const o of objs) {
+				if (!o || typeof o !== "object") continue;
+				const desc = o.description;
+				if (desc && typeof desc === "string" && desc.trim().length > 10) {
+					return decodeHtmlEntities(desc);
+				}
+			}
+		} catch {
+			// skip bad JSON-LD
+		}
+	}
+
+	// Fall back to og:description / meta description.
+	const og =
+		extractMetaContent(html, "property", "og:description") ||
+		extractMetaContent(html, "name", "og:description") ||
+		extractMetaContent(html, "name", "description");
+	if (og && og.trim().length > 10) return og;
+
+	return null;
+}
+
 function extractBestImageFromHtml(html, pageUrl) {
 	// JSON-LD usually has the real image.
 	for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
@@ -499,8 +529,36 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 			const availabilityUrl = a ? a.getAttribute("href") : null;
 			const dateLabel = a ? (a.textContent || "").trim() : null;
 
+			// Extract description from JSON-LD or meta tags.
+			let description = null;
+			for (const s of Array.from(document.querySelectorAll('script[type="application/ld+json"]')).slice(0, 8)) {
+				const txt = (s.textContent || "").trim();
+				if (!txt) continue;
+				try {
+					const data = JSON.parse(txt);
+					const objs = Array.isArray(data) ? data : [data];
+					for (const o of objs) {
+						if (!o || typeof o !== "object") continue;
+						if (o.description && typeof o.description === "string" && o.description.trim().length > 10) {
+							description = o.description.trim();
+							break;
+						}
+					}
+					if (description) break;
+				} catch {
+					// skip bad JSON-LD
+				}
+			}
+			if (!description) {
+				description = meta("property", "og:description")
+					|| meta("name", "og:description")
+					|| meta("name", "description")
+					|| null;
+				if (description && description.trim().length <= 10) description = null;
+			}
+
 			const bodyText = document.body?.innerText || "";
-			return { title, thumbnail, availabilityUrl, dateLabel, bodyText };
+			return { title, thumbnail, availabilityUrl, dateLabel, bodyText, description };
 		});
 
 		return dom;
@@ -611,6 +669,7 @@ async function main() {
 
 			let title = extractTitleFromHtml(html) || "Untitled Event";
 			let thumbnail = extractBestImageFromHtml(html, itemUrl);
+			let description = extractDescriptionFromHtml(html);
 			let prices = parsePricesForAnchor(html);
 			let bodyText = html;
 			let trFromText = parseEventTimeRange(bodyText || "") || parseStartTimeAndDuration(bodyText || "");
@@ -630,6 +689,7 @@ async function main() {
 
 				if (dom?.title) title = dom.title;
 				if (dom?.thumbnail) thumbnail = dom.thumbnail;
+				if (dom?.description) description = dom.description;
 				if (dom?.availabilityUrl && dom?.dateLabel) {
 					prices = { availabilityUrl: dom.availabilityUrl, dateLabel: dom.dateLabel };
 				}
@@ -668,6 +728,7 @@ async function main() {
 				end: endIso,
 				url: availabilityUrl,
 				thumbnail: thumbnail || undefined,
+				description: description || undefined,
 			});
 
 			await sleep(250);
@@ -686,6 +747,7 @@ async function main() {
 			url: e.url,
 		};
 		if (e.thumbnail) clean.thumbnail = e.thumbnail;
+		if (e.description) clean.description = e.description;
 
 		const key = `${clean.url}::${clean.start}`;
 		if (!byKey.has(key)) byKey.set(key, clean);

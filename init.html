@@ -925,8 +925,8 @@
               frontContent.appendChild(btn);
             }
 
-            // ── Mobile: wrap in flip structure ──
-            if (isMobile && hasDesc)
+            // ── Mobile: ALL cards flip ──
+            if (isMobile)
             {
               const inner = document.createElement('div');
               inner.className = 'fr-featured-card-inner';
@@ -940,10 +940,13 @@
               back.className = 'fr-featured-card-back';
               back.style.background = randColor;
 
-              const backDesc = document.createElement('div');
-              backDesc.className = 'fr-featured-card-back-desc';
-              backDesc.textContent = item.description;
-              back.appendChild(backDesc);
+              if (hasDesc)
+              {
+                const backDesc = document.createElement('div');
+                backDesc.className = 'fr-featured-card-back-desc';
+                backDesc.textContent = item.description;
+                back.appendChild(backDesc);
+              }
 
               if (item.url)
               {
@@ -966,7 +969,7 @@
               });
               card.style.cursor = 'pointer';
             }
-            // ── Desktop: keep existing behavior ──
+            // ── Desktop: inline detail panel or direct link ──
             else
             {
               card.appendChild(frontContent);
