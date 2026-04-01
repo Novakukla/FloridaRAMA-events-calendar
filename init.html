@@ -403,7 +403,7 @@
             const t = (e.title || '').trim().toLowerCase();
             if (!seen.has(t)) { seen.add(t); unique.push(e); }
           }
-          const featured = unique.slice(0, 6);
+          const featured = unique;
 
           for (const item of featured)
           {
