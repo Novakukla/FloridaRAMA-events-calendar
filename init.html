@@ -412,6 +412,28 @@
       line-height: 1.6;
       white-space: pre-line;
     }
+
+    .fr-modal-tickets
+    {
+      display: inline-block;
+      margin-top: 18px;
+      background: var(--brand-pink);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .fr-modal-tickets:hover
+    {
+      background: var(--brand-orange);
+    }
   </style>
 </head>
 
@@ -430,6 +452,7 @@
         <h2 class="fr-modal-title" id="fr-modal-title"></h2>
         <div class="fr-modal-meta" id="fr-modal-meta"></div>
         <div class="fr-modal-desc" id="fr-modal-desc"></div>
+        <a class="fr-modal-tickets" id="fr-modal-tickets" href="#" target="_blank" style="display:none;">Get Tickets</a>
       </div>
     </div>
   </div>
@@ -475,6 +498,17 @@
 
       descEl.textContent = ev.description || '';
       descEl.style.display = ev.description ? 'block' : 'none';
+
+      const ticketsBtn = document.getElementById('fr-modal-tickets');
+      if (ev.url)
+      {
+        ticketsBtn.href = ev.url;
+        ticketsBtn.style.display = 'inline-block';
+      }
+      else
+      {
+        ticketsBtn.style.display = 'none';
+      }
 
       overlay.classList.add('open');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -574,8 +608,13 @@
           {
             const card = document.createElement('div');
             card.className = 'fr-featured-card';
-            if (item.url) card.addEventListener('click', () => window.open(item.url, '_blank'));
-            else card.addEventListener('click', () => openEventModal(item));
+            const hasDesc = !!(item.description && item.description.trim());
+            if (hasDesc)
+              card.addEventListener('click', () => openEventModal(item));
+            else if (item.url)
+              card.addEventListener('click', () => window.open(item.url, '_blank'));
+            else
+              card.addEventListener('click', () => openEventModal(item));
             card.style.cursor = 'pointer';
 
             if (item.thumbnail)
@@ -625,7 +664,14 @@
             body.appendChild(metaRow);
             card.appendChild(body);
 
-            if (item.url)
+            if (hasDesc)
+            {
+              const btn = document.createElement('span');
+              btn.className = 'fr-featured-card-btn';
+              btn.textContent = 'More Info';
+              card.appendChild(btn);
+            }
+            else if (item.url)
             {
               const btn = document.createElement('a');
               btn.className = 'fr-featured-card-btn';
@@ -661,18 +707,30 @@
         height: 'auto',
         events: events,
 
-        // open event link in new tab, or modal for no-URL events
+        // open event link in new tab, or modal for events with description
         eventClick: function (info)
         {
-          if (info.event.url)
+          const props = info.event.extendedProps;
+          const hasDesc = !!(props.description && props.description.trim());
+          info.jsEvent.preventDefault();
+
+          if (hasDesc)
+          {
+            openEventModal({
+              title: info.event.title,
+              start: info.event.start ? info.event.start.toISOString() : '',
+              end: info.event.end ? info.event.end.toISOString() : '',
+              thumbnail: props.thumbnail || '',
+              description: props.description || '',
+              url: info.event.url || ''
+            });
+          }
+          else if (info.event.url)
           {
             window.open(info.event.url, '_blank');
-            info.jsEvent.preventDefault();
           }
           else
           {
-            info.jsEvent.preventDefault();
-            const props = info.event.extendedProps;
             openEventModal({
               title: info.event.title,
               start: info.event.start ? info.event.start.toISOString() : '',
