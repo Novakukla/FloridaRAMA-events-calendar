@@ -31,11 +31,11 @@
       color: #333;
     }
 
-    /* hide page scrollbars, let calendar handle scroll */
+    /* allow page to scroll for grid + calendar */
     html, body
     {
-      height: 100%;
-      overflow: hidden;
+      height: auto;
+      overflow: auto;
       -ms-overflow-style: none; /* old IE/Edge */
       scrollbar-width: none; /* firefox */
     }
@@ -55,11 +55,123 @@
       scrollbar-width: none;
     }
 
-    #fr-events-calendar { max-width: 100%; margin: 0 auto; height: 100vh; }
+    #fr-events-calendar { max-width: 100%; margin: 0 auto; height: 80vh; min-height: 600px; }
 
-    html,
-    body,
-    #fr-events-calendar{ height: 100%; }
+    /* ── Featured Events Grid ── */
+    .fr-featured-heading
+    {
+      text-align: center;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #fff;
+      margin: 0;
+      padding: 24px 0 16px;
+      letter-spacing: 2px;
+    }
+
+    .fr-featured-grid
+    {
+      display: flex;
+      gap: 20px;
+      padding: 0 20px 30px;
+      max-width: 1600px;
+      margin: 0 auto;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .fr-featured-card
+    {
+      flex: 1 1 calc(33.333% - 14px);
+      max-width: calc(33.333% - 14px);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .fr-featured-card:hover
+    {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .fr-featured-card-img
+    {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .fr-featured-card-body
+    {
+      padding: 12px 14px;
+      color: #fff;
+      font-family: 'Baloo 2', sans-serif;
+    }
+
+    .fr-featured-card-title
+    {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 4px;
+      line-height: 1.3;
+    }
+
+    .fr-featured-card-price
+    {
+      display: inline-block;
+      background: var(--brand-blue);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+
+    .fr-featured-card-subtitle
+    {
+      font-size: 0.82rem;
+      opacity: 0.85;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .fr-featured-card-btn
+    {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      background: var(--brand-pink);
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+    }
+
+    .fr-featured-card-btn:hover
+    {
+      background: var(--brand-orange);
+    }
+
+    @media (max-width: 600px)
+    {
+      .fr-featured-grid { flex-direction: column; align-items: center; }
+      .fr-featured-card { max-width: 95%; }
+      .fr-featured-card-img { aspect-ratio: 16 / 9; }
+    }
 
     /* only show this if loading fails */
     #fr-debug { display: none; }
@@ -204,6 +316,8 @@
 </head>
 
 <body>
+  <h2 class="fr-featured-heading">Upcoming Events</h2>
+  <div id="fr-featured-grid" class="fr-featured-grid"></div>
   <div id="fr-events-calendar"></div>
   <div id="fr-debug" style="font-size:12px;padding:6px 8px;color:#333;"></div>
 
@@ -274,6 +388,90 @@
         events = Array.from(byKey.values()).sort(
           (a, b) => String(a.start || '').localeCompare(String(b.start || ''))
         );
+
+        // ── render featured grid from upcoming events ──
+        const gridEl = document.getElementById('fr-featured-grid');
+        if (gridEl && events.length)
+        {
+          const now = new Date();
+          const upcoming = events.filter(e => new Date(e.start) >= now);
+          // deduplicate by title so recurring events only show once
+          const seen = new Set();
+          const unique = [];
+          for (const e of upcoming)
+          {
+            const t = (e.title || '').trim().toLowerCase();
+            if (!seen.has(t)) { seen.add(t); unique.push(e); }
+          }
+          const featured = unique.slice(0, 6);
+
+          for (const item of featured)
+          {
+            const card = document.createElement('div');
+            card.className = 'fr-featured-card';
+            if (item.url) card.addEventListener('click', () => window.open(item.url, '_blank'));
+
+            if (item.thumbnail)
+            {
+              const img = document.createElement('img');
+              img.className = 'fr-featured-card-img';
+              img.src = item.thumbnail;
+              img.alt = item.title;
+              card.appendChild(img);
+            }
+
+            const brandColors = [
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
+              getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
+            ];
+            const randColor = brandColors[Math.floor(Math.random() * brandColors.length)];
+
+            const body = document.createElement('div');
+            body.className = 'fr-featured-card-body';
+            body.style.background = randColor;
+
+            const title = document.createElement('div');
+            title.className = 'fr-featured-card-title';
+            title.textContent = item.title;
+            body.appendChild(title);
+
+            const metaRow = document.createElement('div');
+            metaRow.className = 'fr-featured-card-subtitle';
+
+            if (item.start)
+            {
+              const d = new Date(item.start);
+              const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+              const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+              let label = dateStr + ' ' + timeStr;
+              if (item.end)
+              {
+                const ed = new Date(item.end);
+                label += ' – ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+              }
+              metaRow.textContent = label;
+            }
+
+            body.appendChild(metaRow);
+            card.appendChild(body);
+
+            if (item.url)
+            {
+              const btn = document.createElement('a');
+              btn.className = 'fr-featured-card-btn';
+              btn.textContent = 'Get Tickets';
+              btn.href = item.url;
+              btn.target = '_blank';
+              btn.addEventListener('click', (e) => e.stopPropagation());
+              card.appendChild(btn);
+            }
+
+            gridEl.appendChild(card);
+          }
+        }
       }
 
       catch (err)
