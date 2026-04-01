@@ -55,7 +55,7 @@
       scrollbar-width: none;
     }
 
-    #fr-events-calendar { max-width: 100%; margin: 0 auto; height: 80vh; min-height: 600px; }
+    #fr-events-calendar { max-width: 100%; margin: 0 auto; min-height: 800px; }
 
     /* ── Featured Events Grid ── */
     .fr-featured-heading
@@ -484,7 +484,7 @@
       const calendar = new FullCalendar.Calendar(calendarEl,
       {
         initialView: 'dayGridMonth',
-        height: '100%',
+        height: 'auto',
         events: events,
 
         // open event link in new tab
