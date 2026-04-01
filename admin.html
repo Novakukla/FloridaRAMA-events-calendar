@@ -146,8 +146,16 @@
     .btn-primary { background: #7c4dff; }
     .btn-primary:hover { background: #6a3de8; }
 
+    .btn-edit { background: var(--brand-blue); padding: 6px 14px; font-size: 0.85rem; margin: 0; }
+    .btn-edit:hover { background: #2b8dbe; }
+
     .btn-danger { background: #b565d4; padding: 6px 14px; font-size: 0.85rem; margin: 0; }
     .btn-danger:hover { background: #9b50b8; }
+
+    .btn-cancel { background: transparent; border: 2px solid #c4b0e0; color: #5c3d91; padding: 10px 24px; }
+    .btn-cancel:hover { border-color: #7c4dff; }
+
+    .event-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
     .btn-setup { background: #7c4dff; }
     .btn-setup:hover { background: #6a3de8; }
@@ -257,7 +265,7 @@
   <!-- Main app -->
   <div id="app" style="display:none;">
     <h1>FloridaRAMA – Manage Events</h1>
-    <p class="subtitle">Add or remove events from the calendar</p>
+    <p class="subtitle">Add, edit, or remove events from the calendar</p>
 
     <div class="top-bar">
       <span></span>
@@ -267,7 +275,7 @@
     <div class="container">
       <!-- Add event form -->
       <div class="form-panel">
-        <h2>Add New Event</h2>
+        <h2 id="form-heading">Add New Event</h2>
 
         <label for="ev-title">Title <span class="req">*</span></label>
         <input type="text" id="ev-title" placeholder="e.g. Trivia Night" />
@@ -298,6 +306,7 @@
         <textarea id="ev-desc" placeholder="Describe the event…" rows="4"></textarea>
 
         <button class="btn btn-primary" id="add-btn" onclick="addEvent()">Add Event</button>
+        <button class="btn btn-cancel" id="cancel-btn" onclick="cancelEdit()" style="display:none;">Cancel</button>
         <div id="form-status" class="status"></div>
       </div>
 
@@ -316,6 +325,7 @@
     const FILE_PATH = 'manual-events.json';
     let currentEvents = [];
     let currentSha = null;
+    let editingIndex = -1; // -1 = add mode, >= 0 = editing that index
 
     // ── Setup / Auth ──
 
@@ -454,7 +464,10 @@
               <div class="event-item-title">${escHtml(ev.title || '(untitled)')}</div>
               <div class="event-item-date">${escHtml(dateStr)}</div>
             </div>
-            <button class="btn btn-danger" onclick="removeEvent(${realIdx})" title="Delete this event">✕ Remove</button>
+            <div class="event-item-actions">
+              <button class="btn btn-edit" onclick="editEvent(${realIdx})" title="Edit this event">✎ Edit</button>
+              <button class="btn btn-danger" onclick="removeEvent(${realIdx})" title="Delete this event">✕ Remove</button>
+            </div>
           </div>`;
       }).join('');
     }
@@ -498,6 +511,52 @@
 
     // ── Actions ──
 
+    function editEvent(index)
+    {
+      const ev = currentEvents[index];
+      if (!ev) return;
+
+      editingIndex = index;
+
+      // parse date & times from ISO string
+      const startDT = ev.start ? ev.start.split('T') : ['', ''];
+      const endDT = ev.end ? ev.end.split('T') : ['', ''];
+
+      document.getElementById('ev-title').value = ev.title || '';
+      document.getElementById('ev-date').value = startDT[0] || '';
+      document.getElementById('ev-start').value = (startDT[1] || '').replace(/:00$/, '');
+      document.getElementById('ev-end').value = (endDT[1] || '').replace(/:00$/, '');
+      document.getElementById('ev-url').value = ev.url || '';
+      document.getElementById('ev-thumb').value = ev.thumbnail || '';
+      document.getElementById('ev-desc').value = ev.description || '';
+      previewThumb(ev.thumbnail || '');
+
+      document.getElementById('form-heading').textContent = 'Edit Event';
+      document.getElementById('add-btn').textContent = 'Save Changes';
+      document.getElementById('cancel-btn').style.display = 'inline-block';
+
+      // scroll to form
+      document.getElementById('form-heading').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEdit()
+    {
+      editingIndex = -1;
+      document.getElementById('form-heading').textContent = 'Add New Event';
+      document.getElementById('add-btn').textContent = 'Add Event';
+      document.getElementById('cancel-btn').style.display = 'none';
+
+      document.getElementById('ev-title').value = '';
+      document.getElementById('ev-date').value = '';
+      document.getElementById('ev-start').value = '';
+      document.getElementById('ev-end').value = '';
+      document.getElementById('ev-url').value = '';
+      document.getElementById('ev-thumb').value = '';
+      document.getElementById('thumb-preview').style.display = 'none';
+      document.getElementById('ev-desc').value = '';
+      setFormStatus('', '');
+    }
+
     async function addEvent()
     {
       const title = document.getElementById('ev-title').value.trim();
@@ -516,6 +575,7 @@
 
       const btn = document.getElementById('add-btn');
       btn.disabled = true;
+      const isEditing = editingIndex >= 0;
       btn.textContent = 'Saving…';
       setFormStatus('Saving to GitHub…', 'info');
 
@@ -523,32 +583,32 @@
       {
         await loadEvents(); // refresh to avoid conflicts
 
-        const newEvent = {
-          id: generateId(title, date),
+        const eventData = {
+          id: isEditing ? (currentEvents[editingIndex]?.id || generateId(title, date)) : generateId(title, date),
           title,
           start: `${date}T${startTime}:00`,
         };
 
-        if (endTime) newEvent.end = `${date}T${endTime}:00`;
-        if (url) newEvent.url = url;
-        if (thumbnail) newEvent.thumbnail = thumbnail;
-        if (description) newEvent.description = description;
+        if (endTime) eventData.end = `${date}T${endTime}:00`;
+        if (url) eventData.url = url;
+        if (thumbnail) eventData.thumbnail = thumbnail;
+        if (description) eventData.description = description;
 
-        currentEvents.push(newEvent);
-        await saveEvents(`Add event: ${title}`);
+        if (isEditing)
+        {
+          currentEvents[editingIndex] = eventData;
+          await saveEvents(`Edit event: ${title}`);
+          setFormStatus(`"${title}" updated!`, 'ok');
+        }
+        else
+        {
+          currentEvents.push(eventData);
+          await saveEvents(`Add event: ${title}`);
+          setFormStatus(`"${title}" added!`, 'ok');
+        }
 
         renderEvents();
-        setFormStatus(`"${title}" added!`, 'ok');
-
-        // clear form
-        document.getElementById('ev-title').value = '';
-        document.getElementById('ev-date').value = '';
-        document.getElementById('ev-start').value = '';
-        document.getElementById('ev-end').value = '';
-        document.getElementById('ev-url').value = '';
-        document.getElementById('ev-thumb').value = '';
-        document.getElementById('thumb-preview').style.display = 'none';
-        document.getElementById('ev-desc').value = '';
+        cancelEdit(); // resets form & mode
       }
       catch (err)
       {
@@ -558,7 +618,7 @@
       finally
       {
         btn.disabled = false;
-        btn.textContent = 'Add Event';
+        btn.textContent = isEditing ? 'Save Changes' : 'Add Event';
       }
     }
 
