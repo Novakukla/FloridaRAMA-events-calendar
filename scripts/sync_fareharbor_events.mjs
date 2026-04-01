@@ -75,32 +75,14 @@ function extractTitleFromHtml(html) {
 }
 
 function extractDescriptionFromHtml(html) {
-	// Try JSON-LD description first.
-	for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
-		const txt = (m[1] || "").trim();
-		if (!txt) continue;
-		try {
-			const data = JSON.parse(txt);
-			const objs = Array.isArray(data) ? data : [data];
-			for (const o of objs) {
-				if (!o || typeof o !== "object") continue;
-				const desc = o.description;
-				if (desc && typeof desc === "string" && desc.trim().length > 10) {
-					return decodeHtmlEntities(desc);
-				}
-			}
-		} catch {
-			// skip bad JSON-LD
-		}
+	// "Activity details" section is rendered client-side on FareHarbor,
+	// so this static HTML fallback tries to find it in the raw HTML.
+	// Look for heading text "Activity details" and grab the next paragraph.
+	const m = html.match(/Activity\s+details<\/[^>]+>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/i);
+	if (m) {
+		const text = decodeHtmlEntities(m[1].replaceAll(/<[^>]+>/g, " "));
+		if (text.length > 20) return text;
 	}
-
-	// Fall back to og:description / meta description.
-	const og =
-		extractMetaContent(html, "property", "og:description") ||
-		extractMetaContent(html, "name", "og:description") ||
-		extractMetaContent(html, "name", "description");
-	if (og && og.trim().length > 10) return og;
-
 	return null;
 }
 
@@ -529,32 +511,31 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 			const availabilityUrl = a ? a.getAttribute("href") : null;
 			const dateLabel = a ? (a.textContent || "").trim() : null;
 
-			// Extract description from JSON-LD or meta tags.
+			// Extract description from "Activity details" section.
 			let description = null;
-			for (const s of Array.from(document.querySelectorAll('script[type="application/ld+json"]')).slice(0, 8)) {
-				const txt = (s.textContent || "").trim();
-				if (!txt) continue;
-				try {
-					const data = JSON.parse(txt);
-					const objs = Array.isArray(data) ? data : [data];
-					for (const o of objs) {
-						if (!o || typeof o !== "object") continue;
-						if (o.description && typeof o.description === "string" && o.description.trim().length > 10) {
-							description = o.description.trim();
+			const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6, [class*="heading"], [class*="title"], [class*="section"]'));
+			for (const heading of headings) {
+				const text = (heading.textContent || "").trim();
+				if (/^activity\s+details$/i.test(text)) {
+					// Walk through next siblings / child elements to find the description text
+					let el = heading.nextElementSibling;
+					// Also check if the description is inside a parent container after the heading
+					if (!el && heading.parentElement) {
+						el = heading.parentElement.nextElementSibling;
+					}
+					while (el) {
+						const tag = (el.tagName || "").toLowerCase();
+						// Stop at the next major heading/section
+						if (/^h[1-6]$/.test(tag)) break;
+						const t = (el.textContent || "").trim();
+						if (t.length > 20) {
+							description = t;
 							break;
 						}
+						el = el.nextElementSibling;
 					}
-					if (description) break;
-				} catch {
-					// skip bad JSON-LD
+					break;
 				}
-			}
-			if (!description) {
-				description = meta("property", "og:description")
-					|| meta("name", "og:description")
-					|| meta("name", "description")
-					|| null;
-				if (description && description.trim().length <= 10) description = null;
 			}
 
 			const bodyText = document.body?.innerText || "";
