@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FloridaRAMA – Manage Events</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-pink: #ef779f;
+      --brand-blue: #36a8de;
+      --brand-green: #3db489;
+      --brand-yellow: #f8c964;
+      --brand-orange: #f47948;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Baloo 2', sans-serif;
+      background: #ede4f7;
+      color: #2d1b4e;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 8px;
+      color: #4a2d82;
+    }
+
+    .subtitle {
+      text-align: center;
+      opacity: 0.7;
+      margin-bottom: 30px;
+      font-size: 0.95rem;
+      color: #5c3d91;
+    }
+
+    /* ── Setup panel ── */
+    .setup-panel {
+      max-width: 500px;
+      margin: 40px auto;
+      background: #ddd0f0;
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .setup-panel p { opacity: 0.85; line-height: 1.6; color: #4a2d82; }
+
+    .setup-panel input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #c4b0e0;
+      background: #f0e8fa;
+      color: #2d1b4e;
+      font-family: monospace;
+      font-size: 0.9rem;
+      margin: 10px 0;
+    }
+
+    /* ── Layout ── */
+    .container {
+      display: flex;
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+
+    .form-panel {
+      flex: 1 1 380px;
+      max-width: 500px;
+      background: #ddd0f0;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .events-panel {
+      flex: 1 1 500px;
+      background: #ddd0f0;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.3rem;
+      color: #6b3fa0;
+    }
+
+    /* ── Form ── */
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 14px 0 4px;
+      font-size: 0.95rem;
+    }
+
+    label .req { color: var(--brand-pink); }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="date"],
+    input[type="time"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 2px solid #c4b0e0;
+      background: #f0e8fa;
+      color: #2d1b4e;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #9b6dd7;
+    }
+
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      color: #fff;
+      margin-top: 20px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary { background: #7c4dff; }
+    .btn-primary:hover { background: #6a3de8; }
+
+    .btn-danger { background: #b565d4; padding: 6px 14px; font-size: 0.85rem; margin: 0; }
+    .btn-danger:hover { background: #9b50b8; }
+
+    .btn-setup { background: #7c4dff; }
+    .btn-setup:hover { background: #6a3de8; }
+
+    .btn-logout { background: transparent; border: 1px solid #b8a0d8; padding: 6px 16px; font-size: 0.8rem; margin: 0; color: #5c3d91; }
+    .btn-logout:hover { border-color: #7c4dff; }
+
+    /* ── Status messages ── */
+    .status {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .status.ok { display: block; background: rgba(124,77,255,0.15); color: #5c3d91; }
+    .status.err { display: block; background: rgba(192,57,43,0.15); color: #a93226; }
+    .status.info { display: block; background: rgba(155,109,215,0.15); color: #5c3d91; }
+
+    /* ── Event list ── */
+    .event-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #f0e8fa;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .event-item img {
+      width: 80px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .event-item-info { flex: 1; min-width: 0; }
+
+    .event-item-title {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #2d1b4e;
+    }
+
+    .event-item-date { opacity: 0.7; font-size: 0.85rem; color: #5c3d91; }
+
+    .no-events { opacity: 0.5; font-style: italic; }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto 10px;
+    }
+
+    .img-preview {
+      margin-top: 8px;
+      max-width: 200px;
+      max-height: 120px;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Setup: ask for GitHub token + repo info -->
+  <div id="setup-panel" class="setup-panel" style="display:none;">
+    <h1>🔧 Setup</h1>
+    <p>
+      Paste the GitHub access token below to get started.<br>
+      Ask your admin if you don't have one.<br>
+      Your browser will remember it so you only do this once.
+    </p>
+    <label for="setup-token">Access Token</label>
+    <input type="password" id="setup-token" placeholder="Paste token here…" />
+    <br>
+    <button class="btn btn-setup" onclick="saveSetup()">Connect</button>
+    <div id="setup-status" class="status"></div>
+  </div>
+
+  <!-- Main app -->
+  <div id="app" style="display:none;">
+    <h1>FloridaRAMA – Manage Events</h1>
+    <p class="subtitle">Add or remove events from the calendar</p>
+
+    <div class="top-bar">
+      <span></span>
+      <button class="btn btn-logout" onclick="logout()">Reset Token</button>
+    </div>
+
+    <div class="container">
+      <!-- Add event form -->
+      <div class="form-panel">
+        <h2>Add New Event</h2>
+
+        <label for="ev-title">Title <span class="req">*</span></label>
+        <input type="text" id="ev-title" placeholder="e.g. Trivia Night" />
+
+        <div class="row">
+          <div>
+            <label for="ev-date">Date <span class="req">*</span></label>
+            <input type="date" id="ev-date" />
+          </div>
+          <div>
+            <label for="ev-start">Start Time <span class="req">*</span></label>
+            <input type="time" id="ev-start" />
+          </div>
+          <div>
+            <label for="ev-end">End Time</label>
+            <input type="time" id="ev-end" />
+          </div>
+        </div>
+
+        <label for="ev-url">Booking / Ticket URL</label>
+        <input type="url" id="ev-url" placeholder="https://fareharbor.com/..." />
+
+        <label for="ev-thumb">Thumbnail Image URL</label>
+        <input type="url" id="ev-thumb" placeholder="https://..." oninput="previewThumb(this.value)" />
+        <img id="thumb-preview" class="img-preview" alt="preview" />
+
+        <button class="btn btn-primary" id="add-btn" onclick="addEvent()">Add Event</button>
+        <div id="form-status" class="status"></div>
+      </div>
+
+      <!-- Current events list -->
+      <div class="events-panel">
+        <h2>Current Manual Events</h2>
+        <div id="events-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'fr_admin_token';
+    const GH_OWNER = 'Novakukla';
+    const GH_REPO = 'FloridaRAMA-events-calendar';
+    const FILE_PATH = 'manual-events.json';
+    let currentEvents = [];
+    let currentSha = null;
+
+    // ── Setup / Auth ──
+
+    function getConfig()
+    {
+      const token = localStorage.getItem(STORAGE_KEY);
+      if (!token) return null;
+      return { owner: GH_OWNER, repo: GH_REPO, token };
+    }
+
+    function saveSetup()
+    {
+      const token = document.getElementById('setup-token').value.trim();
+      const el = document.getElementById('setup-status');
+
+      if (!token)
+      {
+        el.className = 'status err';
+        el.textContent = 'Please paste a token.';
+        return;
+      }
+
+      localStorage.setItem(STORAGE_KEY, token);
+      el.className = 'status ok';
+      el.textContent = 'Saved! Loading…';
+      setTimeout(init, 500);
+    }
+
+    function logout()
+    {
+      localStorage.removeItem(STORAGE_KEY);
+      init();
+    }
+
+    // ── GitHub API helpers ──
+
+    async function ghFetch(endpoint, options = {})
+    {
+      const cfg = getConfig();
+      const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}${endpoint}`;
+      const resp = await fetch(url, {
+        ...options,
+        headers: {
+          'Authorization': `Bearer ${cfg.token}`,
+          'Accept': 'application/vnd.github+json',
+          ...(options.headers || {})
+        }
+      });
+      return resp;
+    }
+
+    async function loadEvents()
+    {
+      const resp = await ghFetch(`/contents/${FILE_PATH}`);
+      if (!resp.ok)
+      {
+        if (resp.status === 404)
+        {
+          currentEvents = [];
+          currentSha = null;
+          return;
+        }
+        throw new Error(`GitHub API error: ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      currentSha = data.sha;
+      const content = atob(data.content.replace(/\n/g, ''));
+      currentEvents = JSON.parse(content);
+    }
+
+    async function saveEvents(message)
+    {
+      const content = btoa(unescape(encodeURIComponent(
+        JSON.stringify(currentEvents, null, 2) + '\n'
+      )));
+
+      const body = {
+        message,
+        content,
+        ...(currentSha ? { sha: currentSha } : {})
+      };
+
+      const resp = await ghFetch(`/contents/${FILE_PATH}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!resp.ok)
+      {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.message || `Save failed: ${resp.status}`);
+      }
+
+      const result = await resp.json();
+      currentSha = result.content.sha;
+    }
+
+    // ── UI ──
+
+    function renderEvents()
+    {
+      const list = document.getElementById('events-list');
+
+      if (!currentEvents.length)
+      {
+        list.innerHTML = '<p class="no-events">No manual events yet.</p>';
+        return;
+      }
+
+      // sort by start date
+      const sorted = [...currentEvents].sort(
+        (a, b) => String(a.start || '').localeCompare(String(b.start || ''))
+      );
+
+      list.innerHTML = sorted.map((ev, i) =>
+      {
+        const d = ev.start ? new Date(ev.start) : null;
+        const dateStr = d
+          ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+            + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+          : '';
+
+        const imgHtml = ev.thumbnail
+          ? `<img src="${escHtml(ev.thumbnail)}" alt="" />`
+          : `<div style="width:80px;height:50px;background:#ede4f7;border-radius:8px;flex-shrink:0;"></div>`;
+
+        // find actual index in currentEvents (not sorted)
+        const realIdx = currentEvents.indexOf(ev);
+
+        return `
+          <div class="event-item">
+            ${imgHtml}
+            <div class="event-item-info">
+              <div class="event-item-title">${escHtml(ev.title || '(untitled)')}</div>
+              <div class="event-item-date">${escHtml(dateStr)}</div>
+            </div>
+            <button class="btn btn-danger" onclick="removeEvent(${realIdx})" title="Delete this event">✕ Remove</button>
+          </div>`;
+      }).join('');
+    }
+
+    function escHtml(s)
+    {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function previewThumb(url)
+    {
+      const img = document.getElementById('thumb-preview');
+      if (url && (url.startsWith('http://') || url.startsWith('https://')))
+      {
+        img.src = url;
+        img.style.display = 'block';
+        img.onerror = () => { img.style.display = 'none'; };
+      }
+      else
+      {
+        img.style.display = 'none';
+      }
+    }
+
+    function setFormStatus(msg, type)
+    {
+      const el = document.getElementById('form-status');
+      el.className = `status ${type}`;
+      el.textContent = msg;
+      if (type === 'ok') setTimeout(() => { el.className = 'status'; }, 4000);
+    }
+
+    function generateId(title, date)
+    {
+      const slug = (title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 20);
+      const d = (date || '').replace(/-/g, '');
+      return `${slug}-${d}`;
+    }
+
+    // ── Actions ──
+
+    async function addEvent()
+    {
+      const title = document.getElementById('ev-title').value.trim();
+      const date = document.getElementById('ev-date').value;
+      const startTime = document.getElementById('ev-start').value;
+      const endTime = document.getElementById('ev-end').value;
+      const url = document.getElementById('ev-url').value.trim();
+      const thumbnail = document.getElementById('ev-thumb').value.trim();
+
+      if (!title || !date || !startTime)
+      {
+        setFormStatus('Title, date, and start time are required.', 'err');
+        return;
+      }
+
+      const btn = document.getElementById('add-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      setFormStatus('Saving to GitHub…', 'info');
+
+      try
+      {
+        await loadEvents(); // refresh to avoid conflicts
+
+        const newEvent = {
+          id: generateId(title, date),
+          title,
+          start: `${date}T${startTime}:00`,
+        };
+
+        if (endTime) newEvent.end = `${date}T${endTime}:00`;
+        if (url) newEvent.url = url;
+        if (thumbnail) newEvent.thumbnail = thumbnail;
+
+        currentEvents.push(newEvent);
+        await saveEvents(`Add event: ${title}`);
+
+        renderEvents();
+        setFormStatus(`"${title}" added!`, 'ok');
+
+        // clear form
+        document.getElementById('ev-title').value = '';
+        document.getElementById('ev-date').value = '';
+        document.getElementById('ev-start').value = '';
+        document.getElementById('ev-end').value = '';
+        document.getElementById('ev-url').value = '';
+        document.getElementById('ev-thumb').value = '';
+        document.getElementById('thumb-preview').style.display = 'none';
+      }
+      catch (err)
+      {
+        console.error(err);
+        setFormStatus(`Error: ${err.message}`, 'err');
+      }
+      finally
+      {
+        btn.disabled = false;
+        btn.textContent = 'Add Event';
+      }
+    }
+
+    async function removeEvent(index)
+    {
+      const ev = currentEvents[index];
+      if (!ev) return;
+      if (!confirm(`Remove "${ev.title}"?`)) return;
+
+      setFormStatus('Removing…', 'info');
+
+      try
+      {
+        await loadEvents(); // refresh
+        currentEvents.splice(index, 1);
+        await saveEvents(`Remove event: ${ev.title}`);
+        renderEvents();
+        setFormStatus(`"${ev.title}" removed.`, 'ok');
+      }
+      catch (err)
+      {
+        console.error(err);
+        setFormStatus(`Error: ${err.message}`, 'err');
+      }
+    }
+
+    // ── Init ──
+
+    async function init()
+    {
+      const cfg = getConfig();
+
+      if (!cfg || !cfg.token)
+      {
+        document.getElementById('setup-panel').style.display = 'block';
+        document.getElementById('app').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('setup-panel').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+
+      try
+      {
+        await loadEvents();
+        renderEvents();
+      }
+      catch (err)
+      {
+        console.error(err);
+        setFormStatus(`Failed to load events: ${err.message}. Check your token/repo settings.`, 'err');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
