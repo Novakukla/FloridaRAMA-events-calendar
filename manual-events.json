@@ -55,10 +55,18 @@
   },
   {
     "id": "mother-s-day-20260510",
-    "title": "Mother’s Day",
+    "title": "Motherâs Day",
     "start": "2026-05-10T10:00:00",
     "end": "2026-05-10T20:00:00",
     "thumbnail": "https://static.wixstatic.com/media/400eb0_5c21f60632494d53826652fe925fe460~mv2.png",
-    "description": "FloridaMAMA Day\n\nExplore a world of immersive art with your mom this mothers day, play scavenger hunts, and make new memories together! Can’t make it on Mother’s day? Gift your mom a FloridaRAMA gift basket & make plans to come in on a later date. \n\nCheers Mom with a special BOGO drink special, including Momosas."
+    "description": "FloridaMAMA Day\n\nExplore a world of immersive art with your mom this mothers day, play scavenger hunts, and make new memories together! Canât make it on Motherâs day? Gift your mom a FloridaRAMA gift basket & make plans to come in on a later date. \n\nCheers Mom with a special BOGO drink special, including Momosas."
+  },
+  {
+    "id": "strange-cat-toy-swap-20260422",
+    "title": "Strange Cat Toy Swap",
+    "start": "2026-04-22T15:00:00",
+    "end": "2026-04-22T18:00:00",
+    "thumbnail": "https://static.wixstatic.com/media/400eb0_6c345b92ddc94e7d8176528ec069ede6~mv2.png",
+    "description": "Designer toy swap and immersive experience, a collaborative event between FloridaRAMA & Strange Cat Toys. Join us for an evening of playful fun, swap blind box toys, make new friends, and discover a world of interactive art."
   }
 ]
