@@ -169,7 +169,97 @@
     @media (max-width: 600px)
     {
       .fr-featured-grid { flex-direction: column; align-items: center; }
-      .fr-featured-card { max-width: 95%; }
+      .fr-featured-card {
+        max-width: 95%;
+        perspective: 1000px;
+        overflow: visible;
+        background: none;
+        box-shadow: none;
+      }
+      .fr-featured-card:hover { transform: none; box-shadow: none; }
+
+      .fr-featured-card-inner {
+        position: relative;
+        width: 100%;
+        transition: transform 0.5s ease;
+        transform-style: preserve-3d;
+      }
+      .fr-featured-card.flipped .fr-featured-card-inner {
+        transform: rotateY(180deg);
+      }
+
+      .fr-featured-card-front,
+      .fr-featured-card-back {
+        width: 100%;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      }
+
+      .fr-featured-card-front {
+        position: relative;
+      }
+
+      .fr-featured-card-back {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        transform: rotateY(180deg);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 24px;
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      .fr-featured-card-back-title {
+        font-family: 'Baloo 2', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 10px;
+      }
+
+      .fr-featured-card-back-desc {
+        font-family: 'Baloo 2', sans-serif;
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.9);
+        line-height: 1.5;
+        white-space: pre-line;
+        margin-bottom: 16px;
+        max-height: 120px;
+        overflow-y: auto;
+      }
+
+      .fr-featured-card-back-btn {
+        display: inline-block;
+        background: var(--brand-pink);
+        color: #fff;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 10px;
+        font-family: 'Baloo 2', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s;
+        margin-bottom: 8px;
+      }
+      .fr-featured-card-back-btn:hover { background: var(--brand-orange); }
+
+      .fr-featured-card-back-tap {
+        font-family: 'Baloo 2', sans-serif;
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.6);
+        margin-top: 6px;
+      }
+
       .fr-featured-card-img { aspect-ratio: 16 / 9; }
     }
 
@@ -768,18 +858,16 @@
           }
           const featured = unique;
 
+          const isMobile = window.matchMedia('(max-width: 600px)').matches;
+
           for (const item of featured)
           {
             const card = document.createElement('div');
             card.className = 'fr-featured-card';
             const hasDesc = !!(item.description && item.description.trim());
-            if (hasDesc)
-              card.addEventListener('click', () => openEventModal(item));
-            else if (item.url)
-              card.addEventListener('click', () => window.open(item.url, '_blank'));
-            else
-              card.addEventListener('click', () => openEventModal(item));
-            card.style.cursor = 'pointer';
+
+            // ── Build front face content ──
+            const frontContent = document.createDocumentFragment();
 
             if (item.thumbnail)
             {
@@ -787,7 +875,7 @@
               img.className = 'fr-featured-card-img';
               img.src = item.thumbnail;
               img.alt = item.title;
-              card.appendChild(img);
+              frontContent.appendChild(img);
             }
 
             const brandColors = [
@@ -825,14 +913,14 @@
             }
 
             body.appendChild(metaRow);
-            card.appendChild(body);
+            frontContent.appendChild(body);
 
             if (hasDesc)
             {
               const btn = document.createElement('span');
               btn.className = 'fr-featured-card-btn';
               btn.textContent = 'More Info';
-              card.appendChild(btn);
+              frontContent.appendChild(btn);
             }
             else if (item.url)
             {
@@ -842,14 +930,79 @@
               btn.href = item.url;
               btn.target = '_blank';
               btn.addEventListener('click', (e) => e.stopPropagation());
-              card.appendChild(btn);
+              frontContent.appendChild(btn);
             }
             else
             {
               const btn = document.createElement('span');
               btn.className = 'fr-featured-card-btn';
               btn.textContent = 'More Info';
-              card.appendChild(btn);
+              frontContent.appendChild(btn);
+            }
+
+            // ── Mobile: wrap in flip structure ──
+            if (isMobile && hasDesc)
+            {
+              const inner = document.createElement('div');
+              inner.className = 'fr-featured-card-inner';
+
+              const front = document.createElement('div');
+              front.className = 'fr-featured-card-front';
+              front.appendChild(frontContent);
+              inner.appendChild(front);
+
+              const back = document.createElement('div');
+              back.className = 'fr-featured-card-back';
+              back.style.background = randColor;
+
+              const backTitle = document.createElement('div');
+              backTitle.className = 'fr-featured-card-back-title';
+              backTitle.textContent = item.title;
+              back.appendChild(backTitle);
+
+              const backDesc = document.createElement('div');
+              backDesc.className = 'fr-featured-card-back-desc';
+              backDesc.textContent = item.description;
+              back.appendChild(backDesc);
+
+              if (item.url)
+              {
+                const backBtn = document.createElement('a');
+                backBtn.className = 'fr-featured-card-back-btn';
+                backBtn.textContent = 'Get Tickets';
+                backBtn.href = item.url;
+                backBtn.target = '_blank';
+                backBtn.addEventListener('click', (e) => e.stopPropagation());
+                back.appendChild(backBtn);
+              }
+
+              const tapHint = document.createElement('div');
+              tapHint.className = 'fr-featured-card-back-tap';
+              tapHint.textContent = 'Tap to flip back';
+              back.appendChild(tapHint);
+
+              inner.appendChild(back);
+              card.appendChild(inner);
+
+              card.addEventListener('click', (e) =>
+              {
+                if (e.target.closest('.fr-featured-card-back-btn')) return;
+                card.classList.toggle('flipped');
+              });
+              card.style.cursor = 'pointer';
+            }
+            // ── Desktop: keep existing behavior ──
+            else
+            {
+              card.appendChild(frontContent);
+
+              if (hasDesc)
+                card.addEventListener('click', () => openEventModal(item));
+              else if (item.url)
+                card.addEventListener('click', () => window.open(item.url, '_blank'));
+              else
+                card.addEventListener('click', () => openEventModal(item));
+              card.style.cursor = 'pointer';
             }
 
             gridEl.appendChild(card);
