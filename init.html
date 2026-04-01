@@ -312,6 +312,103 @@
         display: block;
       }
     }
+
+    /* ── Event Detail Modal ── */
+    .fr-modal-overlay
+    {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .fr-modal-overlay.open
+    {
+      display: flex;
+    }
+
+    .fr-modal
+    {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      position: relative;
+      animation: frModalIn 0.25s ease;
+    }
+
+    @keyframes frModalIn
+    {
+      from { opacity: 0; transform: scale(0.92) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .fr-modal-close
+    {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: rgba(0,0,0,0.45);
+      border: none;
+      color: #fff;
+      font-size: 1.3rem;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      transition: background 0.2s;
+    }
+
+    .fr-modal-close:hover { background: rgba(0,0,0,0.7); }
+
+    .fr-modal img
+    {
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      display: block;
+    }
+
+    .fr-modal-body
+    {
+      padding: 20px 24px 24px;
+    }
+
+    .fr-modal-title
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2d1b4e;
+      margin: 0 0 6px;
+    }
+
+    .fr-modal-meta
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 0.95rem;
+      color: #5c3d91;
+      margin-bottom: 14px;
+    }
+
+    .fr-modal-desc
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      color: #444;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
   </style>
 </head>
 
@@ -321,7 +418,71 @@
   <div id="fr-events-calendar"></div>
   <div id="fr-debug" style="font-size:12px;padding:6px 8px;color:#333;"></div>
 
+  <!-- Event detail modal -->
+  <div id="fr-modal-overlay" class="fr-modal-overlay">
+    <div class="fr-modal">
+      <button class="fr-modal-close" id="fr-modal-close">&times;</button>
+      <img id="fr-modal-img" src="" alt="" />
+      <div class="fr-modal-body">
+        <h2 class="fr-modal-title" id="fr-modal-title"></h2>
+        <div class="fr-modal-meta" id="fr-modal-meta"></div>
+        <div class="fr-modal-desc" id="fr-modal-desc"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // ── Modal helper ──
+    function openEventModal(ev)
+    {
+      const overlay = document.getElementById('fr-modal-overlay');
+      const imgEl   = document.getElementById('fr-modal-img');
+      const titleEl = document.getElementById('fr-modal-title');
+      const metaEl  = document.getElementById('fr-modal-meta');
+      const descEl  = document.getElementById('fr-modal-desc');
+
+      titleEl.textContent = ev.title || '';
+
+      if (ev.thumbnail)
+      {
+        imgEl.src = ev.thumbnail;
+        imgEl.alt = ev.title || '';
+        imgEl.style.display = 'block';
+      }
+      else
+      {
+        imgEl.style.display = 'none';
+      }
+
+      // build date/time string
+      let meta = '';
+      if (ev.start)
+      {
+        const d = new Date(ev.start);
+        meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+             + ' \u2022 '
+             + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        if (ev.end)
+        {
+          const ed = new Date(ev.end);
+          meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+      }
+      metaEl.textContent = meta;
+
+      descEl.textContent = ev.description || '';
+      descEl.style.display = ev.description ? 'block' : 'none';
+
+      overlay.classList.add('open');
+    }
+
+    (function()
+    {
+      const overlay = document.getElementById('fr-modal-overlay');
+      document.getElementById('fr-modal-close').addEventListener('click', () => overlay.classList.remove('open'));
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+    })();
+
     // load events + build calendar
     document.addEventListener('DOMContentLoaded', async function ()
     {
@@ -410,6 +571,8 @@
             const card = document.createElement('div');
             card.className = 'fr-featured-card';
             if (item.url) card.addEventListener('click', () => window.open(item.url, '_blank'));
+            else card.addEventListener('click', () => openEventModal(item));
+            card.style.cursor = 'pointer';
 
             if (item.thumbnail)
             {
@@ -468,6 +631,13 @@
               btn.addEventListener('click', (e) => e.stopPropagation());
               card.appendChild(btn);
             }
+            else
+            {
+              const btn = document.createElement('span');
+              btn.className = 'fr-featured-card-btn';
+              btn.textContent = 'More Info';
+              card.appendChild(btn);
+            }
 
             gridEl.appendChild(card);
           }
@@ -487,13 +657,25 @@
         height: 'auto',
         events: events,
 
-        // open event link in new tab
+        // open event link in new tab, or modal for no-URL events
         eventClick: function (info)
         {
           if (info.event.url)
           {
             window.open(info.event.url, '_blank');
             info.jsEvent.preventDefault();
+          }
+          else
+          {
+            info.jsEvent.preventDefault();
+            const props = info.event.extendedProps;
+            openEventModal({
+              title: info.event.title,
+              start: info.event.start ? info.event.start.toISOString() : '',
+              end: info.event.end ? info.event.end.toISOString() : '',
+              thumbnail: props.thumbnail || '',
+              description: props.description || ''
+            });
           }
         },
 

@@ -217,6 +217,24 @@
       border-radius: 8px;
       display: none;
     }
+
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 2px solid #c4b0e0;
+      background: #f0e8fa;
+      color: #2d1b4e;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #9b6dd7;
+    }
   </style>
 </head>
 <body>
@@ -275,6 +293,9 @@
         <label for="ev-thumb">Thumbnail Image URL</label>
         <input type="url" id="ev-thumb" placeholder="https://..." oninput="previewThumb(this.value)" />
         <img id="thumb-preview" class="img-preview" alt="preview" />
+
+        <label for="ev-desc">Event Description</label>
+        <textarea id="ev-desc" placeholder="Describe the event…" rows="4"></textarea>
 
         <button class="btn btn-primary" id="add-btn" onclick="addEvent()">Add Event</button>
         <div id="form-status" class="status"></div>
@@ -485,6 +506,7 @@
       const endTime = document.getElementById('ev-end').value;
       const url = document.getElementById('ev-url').value.trim();
       const thumbnail = document.getElementById('ev-thumb').value.trim();
+      const description = document.getElementById('ev-desc').value.trim();
 
       if (!title || !date || !startTime)
       {
@@ -510,6 +532,7 @@
         if (endTime) newEvent.end = `${date}T${endTime}:00`;
         if (url) newEvent.url = url;
         if (thumbnail) newEvent.thumbnail = thumbnail;
+        if (description) newEvent.description = description;
 
         currentEvents.push(newEvent);
         await saveEvents(`Add event: ${title}`);
@@ -525,6 +548,7 @@
         document.getElementById('ev-url').value = '';
         document.getElementById('ev-thumb').value = '';
         document.getElementById('thumb-preview').style.display = 'none';
+        document.getElementById('ev-desc').value = '';
       }
       catch (err)
       {
