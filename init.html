@@ -416,7 +416,7 @@
       gap: 6px;
       background: none;
       border: none;
-      color: #fff;
+      color: #333;
       font-family: 'Baloo 2', sans-serif;
       font-size: 1rem;
       font-weight: 600;
@@ -437,14 +437,126 @@
       .fr-detail-body { padding: 20px; }
       .fr-detail-title { font-size: 1.4rem; }
     }
+
+    /* ── Calendar-scoped Modal ── */
+    .fr-cal-modal-overlay
+    {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      border-radius: 8px;
+    }
+
+    .fr-cal-modal-overlay.open { display: flex; }
+
+    .fr-cal-modal
+    {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 480px;
+      width: 90%;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      position: relative;
+      animation: frCalModalIn 0.2s ease;
+    }
+
+    @keyframes frCalModalIn
+    {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .fr-cal-modal-close
+    {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: rgba(0,0,0,0.45);
+      border: none;
+      color: #fff;
+      font-size: 1.2rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      transition: background 0.2s;
+    }
+
+    .fr-cal-modal-close:hover { background: rgba(0,0,0,0.7); }
+
+    .fr-cal-modal img
+    {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .fr-cal-modal-body { padding: 18px 22px 22px; }
+
+    .fr-cal-modal-title
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #2d1b4e;
+      margin: 0 0 4px;
+    }
+
+    .fr-cal-modal-meta
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 0.9rem;
+      color: #5c3d91;
+      margin-bottom: 12px;
+    }
+
+    .fr-cal-modal-desc
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.5;
+      white-space: pre-line;
+      margin-bottom: 14px;
+    }
+
+    .fr-cal-modal-tickets
+    {
+      display: inline-block;
+      background: var(--brand-pink);
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .fr-cal-modal-tickets:hover { background: var(--brand-orange); }
   </style>
 </head>
 
 <body>
-  <h2 class="fr-featured-heading">Upcoming Events</h2>
   <div id="fr-detail" class="fr-detail"></div>
   <div id="fr-featured-grid" class="fr-featured-grid"></div>
-  <div id="fr-events-calendar"></div>
+  <div id="fr-events-calendar" style="position:relative;"></div>
   <div id="fr-debug" style="font-size:12px;padding:6px 8px;color:#333;"></div>
 
   <script>
@@ -507,6 +619,69 @@
       detail.classList.remove('open');
       detail.innerHTML = '';
       grid.style.display = '';
+    }
+
+    // ── Calendar-scoped modal (overlays inside calendar div) ──
+    function openCalendarModal(ev)
+    {
+      closeCalendarModal();
+      const calEl = document.getElementById('fr-events-calendar');
+
+      const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+      let imgHtml = '';
+      if (ev.thumbnail)
+      {
+        imgHtml = `<img src="${esc(ev.thumbnail)}" alt="${esc(ev.title)}" />`;
+      }
+
+      let meta = '';
+      if (ev.start)
+      {
+        const d = new Date(ev.start);
+        meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+             + ' \u2022 '
+             + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        if (ev.end)
+        {
+          const ed = new Date(ev.end);
+          meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+      }
+
+      const descHtml = ev.description
+        ? `<div class="fr-cal-modal-desc">${esc(ev.description)}</div>`
+        : '';
+
+      const ticketsHtml = ev.url
+        ? `<a class="fr-cal-modal-tickets" href="${esc(ev.url)}" target="_blank">Get Tickets</a>`
+        : '';
+
+      const overlay = document.createElement('div');
+      overlay.className = 'fr-cal-modal-overlay open';
+      overlay.id = 'fr-cal-modal-overlay';
+      overlay.innerHTML = `
+        <div class="fr-cal-modal">
+          <button class="fr-cal-modal-close" id="fr-cal-modal-close">&times;</button>
+          ${imgHtml}
+          <div class="fr-cal-modal-body">
+            <h2 class="fr-cal-modal-title">${esc(ev.title)}</h2>
+            <div class="fr-cal-modal-meta">${meta}</div>
+            ${descHtml}
+            ${ticketsHtml}
+          </div>
+        </div>`;
+
+      calEl.appendChild(overlay);
+
+      overlay.querySelector('#fr-cal-modal-close').addEventListener('click', closeCalendarModal);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCalendarModal(); });
+    }
+
+    function closeCalendarModal()
+    {
+      const existing = document.getElementById('fr-cal-modal-overlay');
+      if (existing) existing.remove();
     }
 
     // load events + build calendar
@@ -694,7 +869,7 @@
         height: 'auto',
         events: events,
 
-        // open event link in new tab, or modal for events with description
+        // calendar clicks: modal inside calendar area, or direct link
         eventClick: function (info)
         {
           const props = info.event.extendedProps;
@@ -703,7 +878,7 @@
 
           if (hasDesc)
           {
-            openEventModal({
+            openCalendarModal({
               title: info.event.title,
               start: info.event.start ? info.event.start.toISOString() : '',
               end: info.event.end ? info.event.end.toISOString() : '',
@@ -718,7 +893,7 @@
           }
           else
           {
-            openEventModal({
+            openCalendarModal({
               title: info.event.title,
               start: info.event.start ? info.event.start.toISOString() : '',
               end: info.event.end ? info.event.end.toISOString() : '',
