@@ -645,7 +645,8 @@
       let imgHtml = '';
       if (ev.thumbnail)
       {
-        imgHtml = `<div class="fr-detail-img"><img src="${ev.thumbnail}" alt="${(ev.title || '').replace(/"/g, '&quot;')}" /></div>`;
+        const safeSrc = (ev.thumbnail || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        imgHtml = `<div class="fr-detail-img"><img src="${safeSrc}" alt="${(ev.title || '').replace(/"/g, '&quot;')}" /></div>`;
       }
 
       let meta = '';
@@ -666,8 +667,9 @@
         ? `<div class="fr-detail-desc">${ev.description.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
         : '';
 
+      const safeUrl = (ev.url || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       const ticketsHtml = ev.url
-        ? `<a class="fr-detail-tickets" href="${ev.url}" target="_blank">Get Tickets</a>`
+        ? `<a class="fr-detail-tickets" href="${safeUrl}" target="_blank">Get Tickets</a>`
         : '';
 
       detail.innerHTML = `

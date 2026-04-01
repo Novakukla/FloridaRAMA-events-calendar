@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: data:; connect-src https://api.github.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
   <title>FloridaRAMA – Manage Events</title>
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap" rel="stylesheet">
@@ -575,9 +576,23 @@
         return;
       }
 
+      if (url && !/^https:\/\//i.test(url))
+      {
+        setFormStatus('URL must start with https://', 'err');
+        return;
+      }
+
+      if (thumbnail && !/^https:\/\//i.test(thumbnail))
+      {
+        setFormStatus('Thumbnail URL must start with https://', 'err');
+        return;
+      }
+
       const btn = document.getElementById('add-btn');
+      if (btn.disabled) return;
       btn.disabled = true;
       const isEditing = editingIndex >= 0;
+      const origBtnText = isEditing ? 'Save Changes' : 'Add Event';
       btn.textContent = 'Saving…';
       setFormStatus('Saving to GitHub…', 'info');
 
@@ -615,12 +630,12 @@
       catch (err)
       {
         console.error(err);
-        setFormStatus(`Error: ${err.message}`, 'err');
+        setFormStatus('Something went wrong. Please try again.', 'err');
       }
       finally
       {
         btn.disabled = false;
-        btn.textContent = isEditing ? 'Save Changes' : 'Add Event';
+        btn.textContent = origBtnText;
       }
     }
 
@@ -643,7 +658,7 @@
       catch (err)
       {
         console.error(err);
-        setFormStatus(`Error: ${err.message}`, 'err');
+        setFormStatus('Failed to remove event. Please try again.', 'err');
       }
     }
 
@@ -671,7 +686,7 @@
       catch (err)
       {
         console.error(err);
-        setFormStatus(`Failed to load events: ${err.message}. Check your token/repo settings.`, 'err');
+        setFormStatus('Failed to load events. Check your token and try again.', 'err');
       }
     }
 
