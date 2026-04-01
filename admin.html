@@ -393,15 +393,17 @@
 
       const data = await resp.json();
       currentSha = data.sha;
-      const content = atob(data.content.replace(/\n/g, ''));
+      const bytes = Uint8Array.from(atob(data.content.replace(/\n/g, '')), c => c.charCodeAt(0));
+      const content = new TextDecoder().decode(bytes);
       currentEvents = JSON.parse(content);
     }
 
     async function saveEvents(message)
     {
-      const content = btoa(unescape(encodeURIComponent(
-        JSON.stringify(currentEvents, null, 2) + '\n'
-      )));
+      const jsonStr = JSON.stringify(currentEvents, null, 2) + '\n';
+      const bytes = new TextEncoder().encode(jsonStr);
+      const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
+      const content = btoa(binStr);
 
       const body = {
         message,
