@@ -313,175 +313,153 @@
       }
     }
 
-    /* ── Event Detail Modal ── */
-    .fr-modal-overlay
+    /* ── Inline Event Detail (replaces grid) ── */
+    .fr-detail
     {
       display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.6);
-      z-index: 10000;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      flex-direction: column;
-      overflow-y: auto;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px 30px;
     }
 
-    .fr-modal-overlay.open
+    .fr-detail.open
     {
-      display: flex;
-    }
-
-    .fr-modal
-    {
-      background: #fff;
-      border-radius: 16px;
-      max-width: 560px;
-      width: 100%;
-      overflow-y: auto;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-      position: relative;
-      animation: frModalIn 0.25s ease;
-    }
-
-    @keyframes frModalIn
-    {
-      from { opacity: 0; transform: scale(0.92) translateY(16px); }
-      to   { opacity: 1; transform: scale(1) translateY(0); }
-    }
-
-    .fr-modal-close
-    {
-      position: absolute;
-      top: 12px;
-      right: 14px;
-      background: rgba(0,0,0,0.45);
-      border: none;
-      color: #fff;
-      font-size: 1.3rem;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2;
-      transition: background 0.2s;
-    }
-
-    .fr-modal-close:hover { background: rgba(0,0,0,0.7); }
-
-    .fr-modal img
-    {
-      width: 100%;
-      border-radius: 16px 16px 0 0;
       display: block;
     }
 
-    .fr-modal-body
+    .fr-detail-inner
     {
-      padding: 20px 24px 24px;
+      display: flex;
+      gap: 30px;
+      background: #111;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    .fr-modal-title
+    .fr-detail-img
+    {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+
+    .fr-detail-img img
+    {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .fr-detail-body
+    {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .fr-detail-title
     {
       font-family: 'Baloo 2', sans-serif;
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       font-weight: 700;
-      color: #2d1b4e;
-      margin: 0 0 6px;
+      color: #fff;
+      margin: 0 0 8px;
     }
 
-    .fr-modal-meta
-    {
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 0.95rem;
-      color: #5c3d91;
-      margin-bottom: 14px;
-    }
-
-    .fr-modal-desc
+    .fr-detail-meta
     {
       font-family: 'Baloo 2', sans-serif;
       font-size: 1rem;
-      color: #444;
-      line-height: 1.6;
-      white-space: pre-line;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 16px;
     }
 
-    .fr-modal-tickets
+    .fr-detail-desc
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.6;
+      white-space: pre-line;
+      margin-bottom: 20px;
+    }
+
+    .fr-detail-tickets
     {
       display: inline-block;
-      margin-top: 18px;
       background: var(--brand-pink);
       color: #fff;
       border: none;
-      padding: 12px 28px;
+      padding: 14px 32px;
       border-radius: 10px;
       font-family: 'Baloo 2', sans-serif;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       transition: background 0.2s;
+      align-self: flex-start;
     }
 
-    .fr-modal-tickets:hover
+    .fr-detail-tickets:hover
     {
       background: var(--brand-orange);
+    }
+
+    .fr-detail-back
+    {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 14px;
+      padding: 0;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    .fr-detail-back:hover { opacity: 1; }
+
+    @media (max-width: 700px)
+    {
+      .fr-detail-inner { flex-direction: column; }
+      .fr-detail-img { flex: none; max-width: 100%; }
+      .fr-detail-img img { max-height: 250px; }
+      .fr-detail-body { padding: 20px; }
+      .fr-detail-title { font-size: 1.4rem; }
     }
   </style>
 </head>
 
 <body>
   <h2 class="fr-featured-heading">Upcoming Events</h2>
+  <div id="fr-detail" class="fr-detail"></div>
   <div id="fr-featured-grid" class="fr-featured-grid"></div>
   <div id="fr-events-calendar"></div>
   <div id="fr-debug" style="font-size:12px;padding:6px 8px;color:#333;"></div>
 
-  <!-- Event detail modal -->
-  <div id="fr-modal-overlay" class="fr-modal-overlay">
-    <div class="fr-modal">
-      <button class="fr-modal-close" id="fr-modal-close">&times;</button>
-      <img id="fr-modal-img" src="" alt="" />
-      <div class="fr-modal-body">
-        <h2 class="fr-modal-title" id="fr-modal-title"></h2>
-        <div class="fr-modal-meta" id="fr-modal-meta"></div>
-        <div class="fr-modal-desc" id="fr-modal-desc"></div>
-        <a class="fr-modal-tickets" id="fr-modal-tickets" href="#" target="_blank" style="display:none;">Get Tickets</a>
-      </div>
-    </div>
-  </div>
-
   <script>
-    // ── Modal helper ──
+    // ── Inline detail panel (replaces grid) ──
     function openEventModal(ev)
     {
-      const overlay = document.getElementById('fr-modal-overlay');
-      const imgEl   = document.getElementById('fr-modal-img');
-      const titleEl = document.getElementById('fr-modal-title');
-      const metaEl  = document.getElementById('fr-modal-meta');
-      const descEl  = document.getElementById('fr-modal-desc');
+      const detail = document.getElementById('fr-detail');
+      const grid = document.getElementById('fr-featured-grid');
 
-      titleEl.textContent = ev.title || '';
-
+      let imgHtml = '';
       if (ev.thumbnail)
       {
-        imgEl.src = ev.thumbnail;
-        imgEl.alt = ev.title || '';
-        imgEl.style.display = 'block';
-      }
-      else
-      {
-        imgEl.style.display = 'none';
+        imgHtml = `<div class="fr-detail-img"><img src="${ev.thumbnail}" alt="${(ev.title || '').replace(/"/g, '&quot;')}" /></div>`;
       }
 
-      // build date/time string
       let meta = '';
       if (ev.start)
       {
@@ -495,31 +473,41 @@
           meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
         }
       }
-      metaEl.textContent = meta;
 
-      descEl.textContent = ev.description || '';
-      descEl.style.display = ev.description ? 'block' : 'none';
+      const descHtml = ev.description
+        ? `<div class="fr-detail-desc">${ev.description.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
+        : '';
 
-      const ticketsBtn = document.getElementById('fr-modal-tickets');
-      if (ev.url)
-      {
-        ticketsBtn.href = ev.url;
-        ticketsBtn.style.display = 'inline-block';
-      }
-      else
-      {
-        ticketsBtn.style.display = 'none';
-      }
+      const ticketsHtml = ev.url
+        ? `<a class="fr-detail-tickets" href="${ev.url}" target="_blank">Get Tickets</a>`
+        : '';
 
-      overlay.classList.add('open');
+      detail.innerHTML = `
+        <button class="fr-detail-back" id="fr-detail-back">\u2190 Back to Events</button>
+        <div class="fr-detail-inner">
+          ${imgHtml}
+          <div class="fr-detail-body">
+            <h2 class="fr-detail-title">${(ev.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h2>
+            <div class="fr-detail-meta">${meta}</div>
+            ${descHtml}
+            ${ticketsHtml}
+          </div>
+        </div>`;
+
+      detail.classList.add('open');
+      grid.style.display = 'none';
+
+      document.getElementById('fr-detail-back').addEventListener('click', closeDetail);
     }
 
-    (function()
+    function closeDetail()
     {
-      const overlay = document.getElementById('fr-modal-overlay');
-      document.getElementById('fr-modal-close').addEventListener('click', () => overlay.classList.remove('open'));
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
-    })();
+      const detail = document.getElementById('fr-detail');
+      const grid = document.getElementById('fr-featured-grid');
+      detail.classList.remove('open');
+      detail.innerHTML = '';
+      grid.style.display = '';
+    }
 
     // load events + build calendar
     document.addEventListener('DOMContentLoaded', async function ()
@@ -627,7 +615,6 @@
             }
 
             const brandColors = [
-              getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
               getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
               getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
               getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
