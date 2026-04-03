@@ -62,9 +62,9 @@
 
     /* ── Calendar-scoped Modal ── */
     .fr-cal-modal-overlay {
-      display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.55); z-index: 100;
-      justify-content: center; align-items: center; border-radius: 8px;
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.55); z-index: 1000;
+      justify-content: center; align-items: center;
     }
     .fr-cal-modal-overlay.open { display: flex; }
     .fr-cal-modal {
@@ -147,7 +147,7 @@
           </div>
         </div>`;
 
-      calEl.appendChild(overlay);
+      document.body.appendChild(overlay);
 
       overlay.querySelector('#fr-cal-modal-close').addEventListener('click', closeCalendarModal);
       overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCalendarModal(); });
