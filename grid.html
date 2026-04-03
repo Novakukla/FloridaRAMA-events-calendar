@@ -366,6 +366,11 @@
         console.error('Failed to load event data', err);
       }
     });
+
+    // Auto-resize: tell parent iframe the content height
+    new ResizeObserver(() => {
+      parent.postMessage({ type: 'fr-resize', height: document.body.scrollHeight }, '*');
+    }).observe(document.body);
   </script>
 </body>
 </html>
