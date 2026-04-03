@@ -9,622 +9,89 @@
   <!-- fun display font -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css" />
 
   <style>
-    /* brand colors */
-    :root
-    {
-      --brand-pink: #ef779f;
-      --brand-blue: #36a8de;
-      --brand-green: #3db489;
-      --brand-yellow: #f8c964;
-      --brand-orange: #f47948;
-    }
-    /* base layout */
-    body
-    {
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      font-family: 'Baloo 2', sans-serif;
-      font-size: large;
-      color: #333;
-    }
+    body { font-size: large; }
 
-    /* allow page to scroll for grid + calendar */
-    html, body
-    {
-      height: auto;
-      overflow: auto;
-      -ms-overflow-style: none; /* old IE/Edge */
-      scrollbar-width: none; /* firefox */
-    }
-
-    html::-webkit-scrollbar,
-    body::-webkit-scrollbar,
-    .fc-scroller::-webkit-scrollbar
-    {
-      width: 0;
-      height: 0;
-      display: none;
-    }
-
-    .fc-scroller
-    {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
+    .fc-scroller::-webkit-scrollbar { width: 0; height: 0; display: none; }
+    .fc-scroller { -ms-overflow-style: none; scrollbar-width: none; }
 
     #fr-events-calendar { max-width: 100%; margin: 0 auto; min-height: 800px; }
-
-    /* ── Featured Events Grid ── */
-    .fr-featured-heading
-    {
-      text-align: center;
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 2rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: #fff;
-      margin: 0;
-      padding: 24px 0 16px;
-      letter-spacing: 2px;
-    }
-
-    .fr-featured-grid
-    {
-      display: flex;
-      gap: 20px;
-      padding: 0 20px 30px;
-      max-width: 1600px;
-      margin: 0 auto;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .fr-featured-card
-    {
-      flex: 1 1 calc(33.333% - 14px);
-      max-width: calc(33.333% - 14px);
-      border-radius: 16px;
-      overflow: hidden;
-      position: relative;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    }
-
-    .fr-featured-card:hover
-    {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    }
-
-    .fr-featured-card-img
-    {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      display: block;
-    }
-
-    .fr-featured-card-body
-    {
-      padding: 12px 14px;
-      color: #fff;
-      font-family: 'Baloo 2', sans-serif;
-    }
-
-    .fr-featured-card-title
-    {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0 0 4px;
-      line-height: 1.3;
-    }
-
-    .fr-featured-card-price
-    {
-      display: inline-block;
-      background: var(--brand-blue);
-      color: #fff;
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-right: 6px;
-    }
-
-    .fr-featured-card-subtitle
-    {
-      font-size: 0.82rem;
-      opacity: 0.85;
-      margin-top: 2px;
-      line-height: 1.4;
-    }
-
-    .fr-featured-card-btn
-    {
-      position: absolute;
-      bottom: 14px;
-      right: 14px;
-      background: var(--brand-pink);
-      color: #fff;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 8px;
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-      text-decoration: none;
-    }
-
-    .fr-featured-card-btn:hover
-    {
-      background: var(--brand-orange);
-    }
-
-    @media (max-width: 600px)
-    {
-      .fr-featured-grid { flex-direction: column; align-items: center; }
-      .fr-featured-card {
-        max-width: 95%;
-        perspective: 1000px;
-        overflow: visible;
-        background: none;
-        box-shadow: none;
-      }
-      .fr-featured-card:hover { transform: none; box-shadow: none; }
-
-      .fr-featured-card-inner {
-        position: relative;
-        width: 100%;
-        transition: transform 0.5s ease;
-        transform-style: preserve-3d;
-      }
-      .fr-featured-card.flipped .fr-featured-card-inner {
-        transform: rotateY(180deg);
-      }
-
-      .fr-featured-card-front,
-      .fr-featured-card-back {
-        width: 100%;
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-      }
-
-      .fr-featured-card-front {
-        position: relative;
-      }
-
-      .fr-featured-card-back {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        transform: rotateY(180deg);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 16px;
-        text-align: center;
-        box-sizing: border-box;
-      }
-
-      .fr-featured-card-back-desc {
-        font-family: 'Baloo 2', sans-serif;
-        font-size: 0.9rem;
-        color: rgba(255,255,255,0.9);
-        line-height: 1.5;
-        white-space: pre-line;
-        margin-bottom: 12px;
-        flex: 1;
-        overflow-y: auto;
-      }
-
-      .fr-featured-card-back-btn {
-        display: inline-block;
-        background: var(--brand-pink);
-        color: #fff;
-        border: none;
-        padding: 6px 16px;
-        border-radius: 8px;
-        font-family: 'Baloo 2', sans-serif;
-        font-size: 0.8rem;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        transition: background 0.2s;
-        flex-shrink: 0;
-      }
-      .fr-featured-card-back-btn:hover { background: var(--brand-orange); }
-
-      .fr-featured-card-img { aspect-ratio: 16 / 9; }
-    }
-
-    /* only show this if loading fails */
     #fr-debug { display: none; }
 
-    /* day cells */
-    .fc-daygrid-day-frame
-    {
-      min-height: 130px; /* card space */
-      background-color: #fffdf7;
-      border: none;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
-      border-radius: 8px;
-      padding: 2px;
+    /* ── FullCalendar overrides ── */
+    .fc-scrollgrid { border: none; }
+    .fc-daygrid-day-frame {
+      min-height: 130px; background-color: #fffdf7; border: none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); border-radius: 8px; padding: 2px;
     }
-
-    .fc-scrollgrid
-    {
-      border: none;
+    .fc-daygrid-day-number { font-weight: 600; color: var(--brand-green); margin: 2px; }
+    .fc-daygrid-day-events { max-height: none !important; }
+    .fc-daygrid-event-harness { height: auto !important; margin-bottom: 4px; }
+    .fc-daygrid-event {
+      height: auto !important; white-space: normal; padding: 0; overflow: hidden;
+      border-radius: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.1); transition: transform 0.2s;
     }
-
-    .fc-daygrid-day-number
-    {
-      font-weight: 600;
-      color: var(--brand-green);
-      margin: 2px;
-    }
-    /* events in grid */
-    .fc-daygrid-day-events
-    {
-      max-height: none !important;
-    }
-
-    .fc-daygrid-event-harness
-    {
-      height: auto !important;
-      margin-bottom: 4px;
-    }
-
-    .fc-daygrid-event
-    {
-      height: auto !important;
-      white-space: normal;
-      padding: 0;
-      overflow: hidden;
-      border-radius: 12px;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-      transition: transform 0.2s;
-    }
-
-    .fc-daygrid-event:hover
-    {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-    }
-
+    .fc-daygrid-event:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
     .fc-daygrid-day-events,
     .fc-daygrid-event-harness,
-    .fc-daygrid-event
-    {
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      margin: 0;
-    }
-    /* event card content */
-    .fr-event-card
-    {
-      display: flex;
-      flex-direction: column;
-      font-size: 11px;
-      color: #fff;
-      width: 100%;
-      box-sizing: border-box;
-      min-height: 200px;
-    }
+    .fc-daygrid-event { width: 100%; max-width: 100%; box-sizing: border-box; margin: 0; }
 
-    .fr-event-card img
-    {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-      display: block;
+    .fr-event-card {
+      display: flex; flex-direction: column; font-size: 11px;
+      color: #fff; width: 100%; box-sizing: border-box; min-height: 200px;
     }
+    .fr-event-card img { width: 100%; height: 150px; object-fit: cover; display: block; }
+    .fr-event-title { padding: 6px; font-weight: 600; font-size: 15px; }
+    .fr-event-time { padding: 0 6px 6px; font-size: 12px; opacity: 0.9; }
 
-    .fr-event-title
-    {
-      padding: 6px;
-      font-weight: 600;
-      font-size: 15px;
-    }
-
-    .fr-event-time
-    {
-      padding: 0 6px 6px;
-      font-size: 12px;
-      opacity: 0.9;
-    }
-    /* highlight today */
-    .fc-day-today .fc-daygrid-day-frame
-    {
+    .fc-day-today .fc-daygrid-day-frame {
       background: linear-gradient(135deg, rgba(248,201,100,0.35), #fffdf7);
-      box-shadow:
-        0 0 0 2px rgba(248,201,100,0.9),
-        inset 0 0 0 1px rgba(0,0,0,0.06);
+      box-shadow: 0 0 0 2px rgba(248,201,100,0.9), inset 0 0 0 1px rgba(0,0,0,0.06);
     }
+    .fc-day-today .fc-daygrid-day-number { color: var(--brand-pink); font-weight: 700; }
 
-    .fc-day-today .fc-daygrid-day-number
-    {
-      color: var(--brand-pink);
-      font-weight: 700;
-    }
-    /* mobile: image-only cards */
-    @media (max-width: 600px)
-    {
+    @media (max-width: 600px) {
       .fc-daygrid-day-frame { min-height: auto; padding: 2px; }
-
       .fc-daygrid-day-events { max-height: none !important; }
-
       .fc-daygrid-event-harness { height: auto !important; }
-
       .fc-daygrid-event { height: auto !important; }
-
       .fr-event-title, .fr-event-time { display: none; }
-
-      .fr-event-card
-      {
-        aspect-ratio: 1 / 1;
-        padding: 0;
-        min-height: 0;
-      }
-
-      .fr-event-card img
-      {
-        width: 100%;
-        height: 100%;
-        max-height: none;
-        object-fit: cover;
-        display: block;
-      }
-    }
-
-    /* ── Inline Event Detail (replaces grid) ── */
-    .fr-detail
-    {
-      display: none;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px 30px;
-    }
-
-    .fr-detail.open
-    {
-      display: block;
-    }
-
-    .fr-detail-inner
-    {
-      display: flex;
-      gap: 30px;
-      background: #111;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    }
-
-    .fr-detail-img
-    {
-      flex: 0 0 50%;
-      max-width: 50%;
-    }
-
-    .fr-detail-img img
-    {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .fr-detail-body
-    {
-      flex: 1;
-      padding: 30px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .fr-detail-title
-    {
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #fff;
-      margin: 0 0 8px;
-    }
-
-    .fr-detail-meta
-    {
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 1rem;
-      color: rgba(255,255,255,0.75);
-      margin-bottom: 16px;
-    }
-
-    .fr-detail-desc
-    {
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 1rem;
-      color: rgba(255,255,255,0.9);
-      line-height: 1.6;
-      white-space: pre-line;
-      margin-bottom: 20px;
-    }
-
-    .fr-detail-tickets
-    {
-      display: inline-block;
-      background: var(--brand-pink);
-      color: #fff;
-      border: none;
-      padding: 14px 32px;
-      border-radius: 10px;
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.2s;
-      align-self: flex-start;
-    }
-
-    .fr-detail-tickets:hover
-    {
-      background: var(--brand-orange);
-    }
-
-    .fr-detail-back
-    {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: none;
-      border: none;
-      color: #333;
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 14px;
-      padding: 0;
-      opacity: 0.8;
-      transition: opacity 0.2s;
-    }
-
-    .fr-detail-back:hover { opacity: 1; }
-
-    @media (max-width: 700px)
-    {
-      .fr-detail-inner { flex-direction: column; }
-      .fr-detail-img { flex: none; max-width: 100%; }
-      .fr-detail-img img { max-height: 250px; }
-      .fr-detail-body { padding: 20px; }
-      .fr-detail-title { font-size: 1.4rem; }
+      .fr-event-card { aspect-ratio: 1/1; padding: 0; min-height: 0; }
+      .fr-event-card img { width: 100%; height: 100%; max-height: none; object-fit: cover; display: block; }
     }
 
     /* ── Calendar-scoped Modal ── */
-    .fr-cal-modal-overlay
-    {
-      display: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.55);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      border-radius: 8px;
+    .fr-cal-modal-overlay {
+      display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.55); z-index: 100;
+      justify-content: center; align-items: center; border-radius: 8px;
     }
-
     .fr-cal-modal-overlay.open { display: flex; }
-
-    .fr-cal-modal
-    {
-      background: #fff;
-      border-radius: 16px;
-      max-width: 900px;
-      width: 95%;
-      max-height: 90%;
-      overflow-y: auto;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-      position: relative;
-      animation: frCalModalIn 0.2s ease;
+    .fr-cal-modal {
+      background: #fff; border-radius: 16px; max-width: 900px; width: 95%;
+      max-height: 90%; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      position: relative; animation: frCalModalIn 0.2s ease;
     }
-
-    @keyframes frCalModalIn
-    {
-      from { opacity: 0; transform: scale(0.92); }
-      to   { opacity: 1; transform: scale(1); }
+    @keyframes frCalModalIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+    .fr-cal-modal-close {
+      position: absolute; top: 10px; right: 12px; background: rgba(0,0,0,0.45);
+      border: none; color: #fff; font-size: 1.2rem; width: 32px; height: 32px;
+      border-radius: 50%; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; z-index: 2; transition: background 0.2s;
     }
-
-    .fr-cal-modal-close
-    {
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      background: rgba(0,0,0,0.45);
-      border: none;
-      color: #fff;
-      font-size: 1.2rem;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2;
-      transition: background 0.2s;
-    }
-
     .fr-cal-modal-close:hover { background: rgba(0,0,0,0.7); }
-
-    .fr-cal-modal img
-    {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      display: block;
-    }
-
+    .fr-cal-modal img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
     .fr-cal-modal-body { padding: 18px 22px 22px; }
-
-    .fr-cal-modal-title
-    {
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #2d1b4e;
-      margin: 0 0 4px;
+    .fr-cal-modal-title { font-size: 1.3rem; font-weight: 700; color: #2d1b4e; margin: 0 0 4px; }
+    .fr-cal-modal-meta { font-size: 0.9rem; color: #5c3d91; margin-bottom: 12px; }
+    .fr-cal-modal-desc { font-size: 0.95rem; color: #444; line-height: 1.5; white-space: pre-line; margin-bottom: 14px; }
+    .fr-cal-modal-tickets {
+      display: inline-block; background: var(--brand-pink); color: #fff; border: none;
+      padding: 10px 24px; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; text-decoration: none; transition: background 0.2s;
     }
-
-    .fr-cal-modal-meta
-    {
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 0.9rem;
-      color: #5c3d91;
-      margin-bottom: 12px;
-    }
-
-    .fr-cal-modal-desc
-    {
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 0.95rem;
-      color: #444;
-      line-height: 1.5;
-      white-space: pre-line;
-      margin-bottom: 14px;
-    }
-
-    .fr-cal-modal-tickets
-    {
-      display: inline-block;
-      background: var(--brand-pink);
-      color: #fff;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 10px;
-      font-family: 'Baloo 2', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.2s;
-    }
-
     .fr-cal-modal-tickets:hover { background: var(--brand-orange); }
   </style>
 </head>
