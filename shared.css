@@ -117,7 +117,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .fr-detail-tickets:hover { background: var(--brand-orange); }
 .fr-detail-back {
   display: inline-flex; align-items: center; gap: 6px;
-  background: none; border: none; color: #333;
+  background: none; border: none; color: #fff;
   font-size: 1rem; font-weight: 600; cursor: pointer;
   margin-bottom: 14px; padding: 0; opacity: 0.8; transition: opacity 0.2s;
 }
