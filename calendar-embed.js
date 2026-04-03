@@ -43,8 +43,10 @@
   style.textContent =
     '.fc-scroller::-webkit-scrollbar { width: 0; height: 0; display: none; }' +
     '.fc-scroller { -ms-overflow-style: none; scrollbar-width: none; }' +
-    '#fr-events-calendar { max-width: 100%; margin: 0 auto; min-height: 800px; --fc-page-bg-color: transparent; --fc-neutral-bg-color: transparent; --fc-border-color: transparent; }' +
-    '#fr-events-calendar, .fc, .fc *, .fc-view-harness, .fc-view, .fc-scrollgrid, .fc-scrollgrid-section, .fc-scrollgrid table, .fc-col-header, .fc-daygrid-body, .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid, .fc-header-toolbar { background: transparent !important; border-color: transparent !important; }' +
+    ':root { --fc-page-bg-color: transparent !important; --fc-neutral-bg-color: transparent !important; --fc-border-color: transparent !important; }' +
+    '#fr-events-calendar { max-width: 100%; margin: 0 auto; min-height: 800px; }' +
+    '#fr-events-calendar *, .fc *, .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid, .fc-header-toolbar, .fc-col-header-cell { background-color: transparent !important; background: transparent !important; border-color: transparent !important; }' +
+    '.fc-daygrid-day-frame { background-color: #fffdf7 !important; }' +
     '.fc-scrollgrid { border: none; }' +
     '.fc-daygrid-day-frame { min-height: 130px; background-color: #fffdf7; border: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); border-radius: 8px; padding: 2px; }' +
     '.fc-daygrid-day-number { font-weight: 600; color: var(--brand-green); margin: 2px; }' +
