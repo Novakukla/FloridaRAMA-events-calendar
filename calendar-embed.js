@@ -44,10 +44,7 @@
     '.fc-scroller::-webkit-scrollbar { width: 0; height: 0; display: none; }' +
     '.fc-scroller { -ms-overflow-style: none; scrollbar-width: none; }' +
     '#fr-events-calendar { max-width: 100%; margin: 0 auto; min-height: 800px; }' +
-    '.fc { background: transparent; }' +
-    '.fc .fc-scrollgrid { background: transparent; }' +
-    '.fc th { background: transparent; }' +
-    '.fc td { background: transparent; }' +
+    '#fr-events-calendar, .fc, .fc-view-harness, .fc-view, .fc-scrollgrid, .fc-scrollgrid-section, .fc-scrollgrid table, .fc-col-header, .fc-daygrid-body, .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { background: transparent !important; border-color: transparent !important; }' +
     '.fc-scrollgrid { border: none; }' +
     '.fc-daygrid-day-frame { min-height: 130px; background-color: #fffdf7; border: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); border-radius: 8px; padding: 2px; }' +
     '.fc-daygrid-day-number { font-weight: 600; color: var(--brand-green); margin: 2px; }' +

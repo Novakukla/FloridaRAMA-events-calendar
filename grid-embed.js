@@ -26,6 +26,7 @@
   // ── Inject page-specific CSS ──
   var style = document.createElement('style');
   style.textContent =
+    '#fr-grid-root { background: transparent; }' +
     '#fr-grid-root .fr-featured-grid { flex-wrap: nowrap; }' +
     '.fr-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 0 20px; font-family: "Baloo 2", sans-serif; }' +
     '.fr-pagination-btn { background: var(--brand-blue); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, opacity 0.2s; }' +
