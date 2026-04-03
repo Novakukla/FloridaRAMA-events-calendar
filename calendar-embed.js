@@ -46,9 +46,9 @@
     ':root { --fc-page-bg-color: transparent !important; --fc-neutral-bg-color: transparent !important; --fc-border-color: transparent !important; }' +
     '#fr-events-calendar { max-width: 100%; margin: 0 auto; min-height: 800px; }' +
     '#fr-events-calendar *, .fc *, .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid, .fc-header-toolbar, .fc-col-header-cell { background-color: transparent !important; background: transparent !important; border-color: transparent !important; }' +
-    '.fc-daygrid-day-frame { background-color: #fffdf7 !important; }' +
+    '.fc-daygrid-day-frame { background-color: transparent !important; }' +
     '.fc-scrollgrid { border: none; }' +
-    '.fc-daygrid-day-frame { min-height: 130px; background-color: #fffdf7; border: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); border-radius: 8px; padding: 2px; }' +
+    '.fc-daygrid-day-frame { min-height: 130px; background-color: transparent !important; border: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); border-radius: 8px; padding: 2px; }' +
     '.fc-daygrid-day-number { font-weight: 600; color: var(--brand-green); margin: 2px; }' +
     '.fc-daygrid-day-events { max-height: none !important; }' +
     '.fc-daygrid-event-harness { height: auto !important; margin-bottom: 4px; }' +
@@ -59,7 +59,7 @@
     '.fr-event-card img { width: 100%; height: 150px; object-fit: cover; display: block; }' +
     '.fr-event-title { padding: 6px; font-weight: 600; font-size: 15px; }' +
     '.fr-event-time { padding: 0 6px 6px; font-size: 12px; opacity: 0.9; }' +
-    '.fc-day-today .fc-daygrid-day-frame { background: linear-gradient(135deg, rgba(248,201,100,0.35), #fffdf7); box-shadow: 0 0 0 2px rgba(248,201,100,0.9), inset 0 0 0 1px rgba(0,0,0,0.06); }' +
+    '.fc-day-today .fc-daygrid-day-frame { background: rgba(248,201,100,0.35) !important; box-shadow: 0 0 0 2px rgba(248,201,100,0.9), inset 0 0 0 1px rgba(0,0,0,0.06); }' +
     '.fc-day-today .fc-daygrid-day-number { color: var(--brand-pink); font-weight: 700; }' +
     '@media (max-width: 600px) {' +
       '.fc-daygrid-day-frame { min-height: auto; padding: 2px; }' +
@@ -72,7 +72,7 @@
     '}' +
     '.fr-cal-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); z-index: 1000; justify-content: center; align-items: center; }' +
     '.fr-cal-modal-overlay.open { display: flex; }' +
-    '.fr-cal-modal { background: #fff; border-radius: 16px; max-width: 900px; width: 95%; max-height: 90%; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.35); position: relative; animation: frCalModalIn 0.2s ease; }' +
+    '.fr-cal-modal { background: transparent; border-radius: 16px; max-width: 900px; width: 95%; max-height: 90%; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.35); position: relative; animation: frCalModalIn 0.2s ease; }' +
     '@keyframes frCalModalIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }' +
     '.fr-cal-modal-close { position: absolute; top: 10px; right: 12px; background: rgba(0,0,0,0.45); border: none; color: #fff; font-size: 1.2rem; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; transition: background 0.2s; }' +
     '.fr-cal-modal-close:hover { background: rgba(0,0,0,0.7); }' +
