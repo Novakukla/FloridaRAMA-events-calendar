@@ -1,0 +1,700 @@
+<!-- FloridaRAMA – Paginated Events Grid -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root
+    {
+      --brand-pink: #ef779f;
+      --brand-blue: #36a8de;
+      --brand-green: #3db489;
+      --brand-yellow: #f8c964;
+      --brand-orange: #f47948;
+    }
+
+    body
+    {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: 'Baloo 2', sans-serif;
+      color: #333;
+    }
+
+    html, body
+    {
+      height: auto;
+      overflow: auto;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar
+    {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    /* ── Grid ── */
+    .fr-featured-grid
+    {
+      display: flex;
+      gap: 20px;
+      padding: 0 20px 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+      justify-content: center;
+      flex-wrap: nowrap;
+    }
+
+    .fr-featured-card
+    {
+      flex: 1 1 calc(33.333% - 14px);
+      max-width: calc(33.333% - 14px);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .fr-featured-card:hover
+    {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .fr-featured-card-img
+    {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .fr-featured-card-body
+    {
+      padding: 12px 14px;
+      color: #fff;
+      font-family: 'Baloo 2', sans-serif;
+    }
+
+    .fr-featured-card-title
+    {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 4px;
+      line-height: 1.3;
+    }
+
+    .fr-featured-card-subtitle
+    {
+      font-size: 0.82rem;
+      opacity: 0.85;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .fr-featured-card-btn
+    {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      background: var(--brand-pink);
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+    }
+
+    .fr-featured-card-btn:hover { background: var(--brand-orange); }
+
+    /* ── Pagination arrows ── */
+    .fr-pagination
+    {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 0 20px;
+      font-family: 'Baloo 2', sans-serif;
+    }
+
+    .fr-pagination-btn
+    {
+      background: var(--brand-blue);
+      color: #fff;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .fr-pagination-btn:hover { background: var(--brand-green); }
+    .fr-pagination-btn:disabled { opacity: 0.3; cursor: default; background: #aaa; }
+
+    .fr-pagination-info
+    {
+      font-size: 0.9rem;
+      color: #555;
+      font-weight: 600;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* ── Mobile: flip cards ── */
+    @media (max-width: 600px)
+    {
+      .fr-featured-grid { flex-direction: column; align-items: center; flex-wrap: nowrap; }
+      .fr-featured-card {
+        max-width: 95%;
+        perspective: 1000px;
+        overflow: visible;
+        background: none;
+        box-shadow: none;
+      }
+      .fr-featured-card:hover { transform: none; box-shadow: none; }
+
+      .fr-featured-card-inner {
+        position: relative;
+        width: 100%;
+        transition: transform 0.5s ease;
+        transform-style: preserve-3d;
+      }
+      .fr-featured-card.flipped .fr-featured-card-inner {
+        transform: rotateY(180deg);
+      }
+
+      .fr-featured-card-front,
+      .fr-featured-card-back {
+        width: 100%;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      }
+
+      .fr-featured-card-front { position: relative; }
+
+      .fr-featured-card-back {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        transform: rotateY(180deg);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      .fr-featured-card-back-desc {
+        font-family: 'Baloo 2', sans-serif;
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.9);
+        line-height: 1.5;
+        white-space: pre-line;
+        margin-bottom: 12px;
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .fr-featured-card-back-btn {
+        display: inline-block;
+        background: var(--brand-pink);
+        color: #fff;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-family: 'Baloo 2', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .fr-featured-card-back-btn:hover { background: var(--brand-orange); }
+
+      .fr-featured-card-img { aspect-ratio: 16 / 9; }
+    }
+
+    /* ── Inline Detail Panel ── */
+    .fr-detail
+    {
+      display: none;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px 30px;
+    }
+
+    .fr-detail.open { display: block; }
+
+    .fr-detail-inner
+    {
+      display: flex;
+      gap: 30px;
+      background: #111;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .fr-detail-img { flex: 0 0 50%; max-width: 50%; }
+
+    .fr-detail-img img
+    {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .fr-detail-body
+    {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .fr-detail-title
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 8px;
+    }
+
+    .fr-detail-meta
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 16px;
+    }
+
+    .fr-detail-desc
+    {
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.6;
+      white-space: pre-line;
+      margin-bottom: 20px;
+    }
+
+    .fr-detail-tickets
+    {
+      display: inline-block;
+      background: var(--brand-pink);
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+      align-self: flex-start;
+    }
+
+    .fr-detail-tickets:hover { background: var(--brand-orange); }
+
+    .fr-detail-back
+    {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: #333;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 14px;
+      padding: 0;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    .fr-detail-back:hover { opacity: 1; }
+
+    @media (max-width: 700px)
+    {
+      .fr-detail-inner { flex-direction: column; }
+      .fr-detail-img { flex: none; max-width: 100%; }
+      .fr-detail-img img { max-height: 250px; }
+      .fr-detail-body { padding: 20px; }
+      .fr-detail-title { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="fr-detail" class="fr-detail"></div>
+  <div id="fr-featured-grid" class="fr-featured-grid"></div>
+  <div class="fr-pagination" id="fr-pagination" style="display:none;">
+    <button class="fr-pagination-btn" id="fr-prev" aria-label="Previous page">&#8249;</button>
+    <span class="fr-pagination-info" id="fr-page-info"></span>
+    <button class="fr-pagination-btn" id="fr-next" aria-label="Next page">&#8250;</button>
+  </div>
+
+  <script>
+    const PAGE_SIZE = 3;
+    let allEvents = [];
+    let currentPage = 0;
+
+    function openEventModal(ev)
+    {
+      const detail = document.getElementById('fr-detail');
+      const grid = document.getElementById('fr-featured-grid');
+      const pagination = document.getElementById('fr-pagination');
+
+      const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+      let imgHtml = '';
+      if (ev.thumbnail)
+      {
+        imgHtml = `<div class="fr-detail-img"><img src="${esc(ev.thumbnail)}" alt="${esc(ev.title)}" /></div>`;
+      }
+
+      let meta = '';
+      if (ev.start)
+      {
+        const d = new Date(ev.start);
+        meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+             + ' \u2022 '
+             + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        if (ev.end)
+        {
+          const ed = new Date(ev.end);
+          meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+      }
+
+      const descHtml = ev.description
+        ? `<div class="fr-detail-desc">${esc(ev.description)}</div>`
+        : '';
+
+      const ticketsHtml = ev.url
+        ? `<a class="fr-detail-tickets" href="${esc(ev.url)}" target="_blank">Get Tickets</a>`
+        : '';
+
+      detail.innerHTML = `
+        <button class="fr-detail-back" id="fr-detail-back">\u2190 Back to Events</button>
+        <div class="fr-detail-inner">
+          ${imgHtml}
+          <div class="fr-detail-body">
+            <h2 class="fr-detail-title">${esc(ev.title)}</h2>
+            <div class="fr-detail-meta">${meta}</div>
+            ${descHtml}
+            ${ticketsHtml}
+          </div>
+        </div>`;
+
+      detail.classList.add('open');
+      grid.style.display = 'none';
+      pagination.style.display = 'none';
+
+      document.getElementById('fr-detail-back').addEventListener('click', closeDetail);
+    }
+
+    function closeDetail()
+    {
+      const detail = document.getElementById('fr-detail');
+      const grid = document.getElementById('fr-featured-grid');
+      const pagination = document.getElementById('fr-pagination');
+      detail.classList.remove('open');
+      detail.innerHTML = '';
+      grid.style.display = '';
+      pagination.style.display = '';
+    }
+
+    function renderPage()
+    {
+      const gridEl = document.getElementById('fr-featured-grid');
+      gridEl.innerHTML = '';
+
+      const totalPages = Math.ceil(allEvents.length / PAGE_SIZE);
+      if (currentPage >= totalPages) currentPage = totalPages - 1;
+      if (currentPage < 0) currentPage = 0;
+
+      const start = currentPage * PAGE_SIZE;
+      const pageItems = allEvents.slice(start, start + PAGE_SIZE);
+      const isMobile = window.matchMedia('(max-width: 600px)').matches;
+
+      const brandColors = [
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
+      ];
+
+      for (const item of pageItems)
+      {
+        const card = document.createElement('div');
+        card.className = 'fr-featured-card';
+        const hasDesc = !!(item.description && item.description.trim());
+        const randColor = brandColors[Math.floor(Math.random() * brandColors.length)];
+
+        // ── Build front face content ──
+        const frontContent = document.createDocumentFragment();
+
+        if (item.thumbnail)
+        {
+          const img = document.createElement('img');
+          img.className = 'fr-featured-card-img';
+          img.src = item.thumbnail;
+          img.alt = item.title;
+          frontContent.appendChild(img);
+        }
+
+        const body = document.createElement('div');
+        body.className = 'fr-featured-card-body';
+        body.style.background = randColor;
+
+        const title = document.createElement('div');
+        title.className = 'fr-featured-card-title';
+        title.textContent = item.title;
+        body.appendChild(title);
+
+        const metaRow = document.createElement('div');
+        metaRow.className = 'fr-featured-card-subtitle';
+
+        if (item.start)
+        {
+          const d = new Date(item.start);
+          const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+          const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          let label = dateStr + ' ' + timeStr;
+          if (item.end)
+          {
+            const ed = new Date(item.end);
+            label += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          }
+          metaRow.textContent = label;
+        }
+
+        body.appendChild(metaRow);
+        frontContent.appendChild(body);
+
+        if (hasDesc)
+        {
+          const btn = document.createElement('span');
+          btn.className = 'fr-featured-card-btn';
+          btn.textContent = 'More Info';
+          frontContent.appendChild(btn);
+        }
+        else if (item.url)
+        {
+          const btn = document.createElement('a');
+          btn.className = 'fr-featured-card-btn';
+          btn.textContent = 'Get Tickets';
+          btn.href = item.url;
+          btn.target = '_blank';
+          btn.addEventListener('click', (e) => e.stopPropagation());
+          frontContent.appendChild(btn);
+        }
+        else
+        {
+          const btn = document.createElement('span');
+          btn.className = 'fr-featured-card-btn';
+          btn.textContent = 'More Info';
+          frontContent.appendChild(btn);
+        }
+
+        // ── Mobile: ALL cards flip ──
+        if (isMobile)
+        {
+          const inner = document.createElement('div');
+          inner.className = 'fr-featured-card-inner';
+
+          const front = document.createElement('div');
+          front.className = 'fr-featured-card-front';
+          front.appendChild(frontContent);
+          inner.appendChild(front);
+
+          const back = document.createElement('div');
+          back.className = 'fr-featured-card-back';
+          back.style.background = randColor;
+
+          if (hasDesc)
+          {
+            const backDesc = document.createElement('div');
+            backDesc.className = 'fr-featured-card-back-desc';
+            backDesc.textContent = item.description;
+            back.appendChild(backDesc);
+          }
+
+          if (item.url)
+          {
+            const backBtn = document.createElement('a');
+            backBtn.className = 'fr-featured-card-back-btn';
+            backBtn.textContent = 'Get Tickets';
+            backBtn.href = item.url;
+            backBtn.target = '_blank';
+            backBtn.addEventListener('click', (e) => e.stopPropagation());
+            back.appendChild(backBtn);
+          }
+
+          inner.appendChild(back);
+          card.appendChild(inner);
+
+          card.addEventListener('click', (e) =>
+          {
+            if (e.target.closest('.fr-featured-card-back-btn')) return;
+            card.classList.toggle('flipped');
+          });
+          card.style.cursor = 'pointer';
+        }
+        // ── Desktop: inline detail panel or direct link ──
+        else
+        {
+          card.appendChild(frontContent);
+
+          if (hasDesc)
+            card.addEventListener('click', () => openEventModal(item));
+          else if (item.url)
+            card.addEventListener('click', () => window.open(item.url, '_blank'));
+          else
+            card.addEventListener('click', () => openEventModal(item));
+          card.style.cursor = 'pointer';
+        }
+
+        gridEl.appendChild(card);
+      }
+
+      // update pagination controls
+      const paginationEl = document.getElementById('fr-pagination');
+      const prevBtn = document.getElementById('fr-prev');
+      const nextBtn = document.getElementById('fr-next');
+      const pageInfo = document.getElementById('fr-page-info');
+
+      if (totalPages > 1)
+      {
+        paginationEl.style.display = 'flex';
+        prevBtn.disabled = currentPage === 0;
+        nextBtn.disabled = currentPage >= totalPages - 1;
+        pageInfo.textContent = `${currentPage + 1} / ${totalPages}`;
+      }
+      else
+      {
+        paginationEl.style.display = 'none';
+      }
+    }
+
+    document.getElementById('fr-prev').addEventListener('click', () =>
+    {
+      if (currentPage > 0) { currentPage--; renderPage(); }
+    });
+
+    document.getElementById('fr-next').addEventListener('click', () =>
+    {
+      const totalPages = Math.ceil(allEvents.length / PAGE_SIZE);
+      if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
+    });
+
+    // ── Load data ──
+    document.addEventListener('DOMContentLoaded', async function ()
+    {
+      async function loadJsonArray(path)
+      {
+        try
+        {
+          const response = await fetch(path, { cache: 'no-store' });
+          if (!response.ok)
+          {
+            if (response.status === 404) return [];
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          return Array.isArray(data) ? data : [];
+        }
+        catch (err)
+        {
+          console.error(`Failed to load ${path}`, err);
+          return [];
+        }
+      }
+
+      try
+      {
+        const [syncedEvents, manualEvents] = await Promise.all([
+          loadJsonArray('./events.json'),
+          loadJsonArray('./manual-events.json')
+        ]);
+
+        const merged = [...syncedEvents, ...manualEvents];
+        const byKey = new Map();
+
+        for (const event of merged)
+        {
+          if (!event || typeof event !== 'object') continue;
+
+          const title = typeof event.title === 'string' ? event.title.trim() : '';
+          const start = typeof event.start === 'string' ? event.start : '';
+          if (!title || !start) continue;
+
+          const key =
+            (typeof event.id === 'string' && event.id.trim())
+              ? `id:${event.id.trim()}`
+              : `${title}::${start}::${event.end || ''}`;
+
+          byKey.set(key, event);
+        }
+
+        const events = Array.from(byKey.values()).sort(
+          (a, b) => String(a.start || '').localeCompare(String(b.start || ''))
+        );
+
+        const now = new Date();
+        const upcoming = events.filter(e => new Date(e.start) >= now);
+
+        // deduplicate by title
+        const seen = new Set();
+        for (const e of upcoming)
+        {
+          const t = (e.title || '').trim().toLowerCase();
+          if (!seen.has(t)) { seen.add(t); allEvents.push(e); }
+        }
+
+        renderPage();
+      }
+      catch (err)
+      {
+        console.error('Failed to load event data', err);
+      }
+    });
+  </script>
+</body>
+</html>
