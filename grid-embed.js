@@ -102,6 +102,21 @@
     pagination.style.display = '';
   }
 
+  function scrollGridIntoView() {
+    var root = document.getElementById('fr-grid-root');
+    if (!root) return;
+
+    var rect = root.getBoundingClientRect();
+    var offset = 24;
+    if (rect.top >= offset) return;
+
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({
+      top: Math.max(0, window.scrollY + rect.top - offset),
+      behavior: prefersReducedMotion ? 'auto' : 'smooth'
+    });
+  }
+
   function renderPage() {
     var gridEl = document.getElementById('fr-featured-grid');
     gridEl.innerHTML = '';
@@ -292,12 +307,24 @@
       '</div>';
 
     document.getElementById('fr-prev').addEventListener('click', function () {
-      if (currentPage > 0) { currentPage--; renderPage(); }
+      if (currentPage > 0) {
+        currentPage--;
+        renderPage();
+        requestAnimationFrame(function () {
+          requestAnimationFrame(scrollGridIntoView);
+        });
+      }
     });
 
     document.getElementById('fr-next').addEventListener('click', function () {
       var totalPages = Math.ceil(allEvents.length / PAGE_SIZE);
-      if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
+      if (currentPage < totalPages - 1) {
+        currentPage++;
+        renderPage();
+        requestAnimationFrame(function () {
+          requestAnimationFrame(scrollGridIntoView);
+        });
+      }
     });
 
     try {
