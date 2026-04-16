@@ -28,6 +28,7 @@
   style.textContent =
     '#fr-grid-root { background: transparent; }' +
     '#fr-grid-root .fr-featured-grid { flex-wrap: nowrap; }' +
+    '@media (max-width: 600px) { .fr-featured-card { touch-action: pan-y; } .fr-featured-card.flipped { touch-action: none; } }' +
     '.fr-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 0 20px; font-family: "Baloo 2", sans-serif; }' +
     '.fr-pagination-btn { background: var(--brand-blue); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, opacity 0.2s; }' +
     '.fr-pagination-btn:hover { background: var(--brand-green); }' +
@@ -40,7 +41,7 @@
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  var PAGE_SIZE = 3;
+  var PAGE_SIZE = 2;
   var allEvents = [];
   var currentPage = 0;
 
@@ -234,8 +235,27 @@
         card.appendChild(inner);
 
         (function (c) {
+          var touchStartX = 0;
+          var touchStartY = 0;
+          var touchMoved = false;
+
+          c.addEventListener('touchstart', function (e) {
+            if (!e.touches || !e.touches.length) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchMoved = false;
+          }, { passive: true });
+
+          c.addEventListener('touchmove', function (e) {
+            if (!e.touches || !e.touches.length) return;
+            var dx = Math.abs(e.touches[0].clientX - touchStartX);
+            var dy = Math.abs(e.touches[0].clientY - touchStartY);
+            if (dx > 8 || dy > 8) touchMoved = true;
+          }, { passive: true });
+
           c.addEventListener('click', function (e) {
             if (e.target.closest('.fr-featured-card-back-btn')) return;
+            if (touchMoved) return;
             c.classList.toggle('flipped');
           });
         })(card);
