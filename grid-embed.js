@@ -28,7 +28,14 @@
   style.textContent =
     '#fr-grid-root { background: transparent; }' +
     '#fr-grid-root .fr-featured-grid { flex-wrap: nowrap; }' +
-    '@media (max-width: 600px) { .fr-featured-card { touch-action: pan-y; } .fr-featured-card.flipped { touch-action: none; } }' +
+    '@media (max-width: 600px) {' +
+      '#fr-grid-root .fr-featured-card { touch-action: pan-y; }' +
+      '#fr-grid-root .fr-featured-card.flipped { touch-action: none; }' +
+      '#fr-grid-root .fr-featured-card-front { pointer-events: auto; }' +
+      '#fr-grid-root .fr-featured-card-back { pointer-events: none; }' +
+      '#fr-grid-root .fr-featured-card.flipped .fr-featured-card-front { pointer-events: none; }' +
+      '#fr-grid-root .fr-featured-card.flipped .fr-featured-card-back { pointer-events: auto; }' +
+    '}' +
     '.fr-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 0 20px; font-family: "Baloo 2", sans-serif; }' +
     '.fr-pagination-btn { background: var(--brand-blue); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, opacity 0.2s; }' +
     '.fr-pagination-btn:hover { background: var(--brand-green); }' +
