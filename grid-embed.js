@@ -212,7 +212,6 @@
 
         var back = document.createElement('div');
         back.className = 'fr-featured-card-back';
-        back.style.background = randColor;
 
         if (hasDesc) {
           var backDesc = document.createElement('div');

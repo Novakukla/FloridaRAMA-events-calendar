@@ -69,6 +69,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
     transform: rotateY(180deg); display: flex; flex-direction: column;
     justify-content: center; align-items: center;
     padding: 16px; text-align: center; box-sizing: border-box;
+    background: #000;
   }
   .fr-featured-card-back-desc {
     font-size: 0.9rem; color: rgba(255,255,255,0.9);
