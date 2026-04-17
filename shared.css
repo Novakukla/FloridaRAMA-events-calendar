@@ -26,7 +26,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
   justify-content: center; flex-wrap: wrap;
 }
 .fr-featured-card {
-  flex: 1 1 calc(33.333% - 14px); max-width: calc(33.333% - 14px);
+  flex: 1 1 calc(33.333% - 14px); max-width: calc(50% - 10px);
   border-radius: 16px; overflow: hidden; position: relative;
   cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 4px 16px rgba(0,0,0,0.3);
