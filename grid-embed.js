@@ -48,6 +48,40 @@
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function optimizedThumbnailUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return '';
+
+    try {
+      var u = new URL(rawUrl, window.location.href);
+      var host = (u.hostname || '').toLowerCase();
+      var dpr = window.devicePixelRatio || 1;
+      var viewport = window.innerWidth || 1024;
+      var targetWidth = Math.max(480, Math.min(1400, Math.round(viewport * (dpr > 1 ? 1.2 : 1))));
+
+      // Filestack supports query params for quality/format/compression/resize.
+      if (host.indexOf('cdn.filestackcontent.com') !== -1) {
+        u.searchParams.set('compress', 'true');
+        u.searchParams.set('format', 'webp');
+        u.searchParams.set('quality', '75');
+        u.searchParams.set('fit', 'max');
+        u.searchParams.set('w', String(targetWidth));
+        return u.toString();
+      }
+
+      // Wix static images accept quality and width hints.
+      if (host.indexOf('static.wixstatic.com') !== -1) {
+        u.searchParams.set('auto', 'format');
+        u.searchParams.set('q', '75');
+        u.searchParams.set('w', String(targetWidth));
+        return u.toString();
+      }
+
+      return rawUrl;
+    } catch (err) {
+      return rawUrl;
+    }
+  }
+
   var PAGE_SIZE = 2;
   var allEvents = [];
   var currentPage = 0;
@@ -57,8 +91,9 @@
     var grid = document.getElementById('fr-featured-grid');
     var pagination = document.getElementById('fr-pagination');
 
-    var imgHtml = ev.thumbnail
-      ? '<div class="fr-detail-img"><img src="' + esc(ev.thumbnail) + '" alt="' + esc(ev.title) + '" /></div>'
+    var imgSrc = optimizedThumbnailUrl(ev.thumbnail);
+    var imgHtml = imgSrc
+      ? '<div class="fr-detail-img"><img src="' + esc(imgSrc) + '" alt="' + esc(ev.title) + '" loading="lazy" decoding="async" /></div>'
       : '';
 
     var meta = '';
@@ -156,8 +191,10 @@
       if (item.thumbnail) {
         var img = document.createElement('img');
         img.className = 'fr-featured-card-img';
-        img.src = item.thumbnail;
+        img.src = optimizedThumbnailUrl(item.thumbnail);
         img.alt = item.title;
+        img.loading = 'lazy';
+        img.decoding = 'async';
         frontContent.appendChild(img);
       }
 
