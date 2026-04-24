@@ -43,8 +43,8 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .fr-featured-card-btn,
 .fr-featured-card-back-btn,
 .fr-detail-tickets {
-  --fr-button-bg: var(--brand-yellow, #f8c964);
-  --fr-button-hover-bg: var(--brand-pink, #ef779f);
+  --fr-button-bg: var(--brand-pink, #ef779f);
+  --fr-button-hover-bg: var(--brand-yellow, #f8c964);
   --fr-button-current-bg: var(--fr-button-bg);
   --fr-button-ink: #070707;
   --fr-button-ink: color-mix(in srgb, var(--fr-button-current-bg) var(--fr-button-edge-mix, 20%), #000);
@@ -70,7 +70,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .fr-featured-card-back-btn:focus-visible,
 .fr-detail-tickets:hover,
 .fr-detail-tickets:focus-visible {
-  --fr-button-current-bg: var(--fr-button-hover-bg, var(--brand-pink, #ef779f));
+  --fr-button-current-bg: var(--fr-button-hover-bg, var(--brand-yellow, #f8c964));
   --fr-button-edge-mix: var(--fr-button-yellow-edge-mix, 35%);
   background: var(--fr-button-current-bg);
   color: var(--fr-button-ink);
