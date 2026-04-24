@@ -10,6 +10,8 @@
   --fr-button-edge-mix: 55%;
   --fr-button-pink-edge-mix: 72%;
   --fr-button-yellow-edge-mix: 35%;
+  --fr-button-pink-edge: #8f3f62;
+  --fr-button-yellow-edge: #76591d;
 }
 
 body {
@@ -48,22 +50,22 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
   --fr-button-hover-bg: var(--brand-yellow, #f8c964);
   --fr-button-current-bg: var(--fr-button-bg);
   --fr-button-label-color: #fff;
-  --fr-button-edge-mix: var(--fr-button-pink-edge-mix, 72%);
-  --fr-button-ink: #070707;
-  --fr-button-ink: color-mix(in srgb, var(--fr-button-current-bg) var(--fr-button-edge-mix, 20%), #000);
+  --fr-button-edge-color: var(--fr-button-pink-edge, #8f3f62);
   background: var(--fr-button-current-bg);
   color: var(--fr-button-label-color);
-  border: 3px solid var(--fr-button-ink);
-  border-radius: 8px;
+  border: 2px solid var(--fr-button-edge-color);
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   text-decoration: none;
-  text-transform: none;
-  font-weight: 700;
+  text-transform: uppercase;
+  font-family: 'Bebas Neue', 'Arial Narrow', Arial, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   line-height: 1;
-  box-shadow: var(--fr-button-shadow);
+  box-shadow: 3px 3px 0 var(--fr-button-edge-color);
   transition: box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
@@ -74,11 +76,11 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .fr-detail-tickets:hover,
 .fr-detail-tickets:focus-visible {
   --fr-button-current-bg: var(--fr-button-hover-bg, var(--brand-yellow, #f8c964));
-  --fr-button-label-color: var(--fr-button-ink);
-  --fr-button-edge-mix: var(--fr-button-yellow-edge-mix, 35%);
+  --fr-button-label-color: var(--fr-button-yellow-edge, #76591d);
+  --fr-button-edge-color: var(--fr-button-yellow-edge, #76591d);
   background: var(--fr-button-current-bg);
   color: var(--fr-button-label-color);
-  box-shadow: 2px 2px 0 var(--fr-button-ink);
+  box-shadow: 1px 1px 0 var(--fr-button-edge-color);
   transform: translate(2px, 2px);
 }
 
