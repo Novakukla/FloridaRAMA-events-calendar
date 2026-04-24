@@ -8,6 +8,7 @@
   --fr-button-ink: #070707;
   --fr-button-shadow: 4px 4px 0 var(--fr-button-ink);
   --fr-button-edge-mix: 55%;
+  --fr-button-pink-edge-mix: 72%;
   --fr-button-yellow-edge-mix: 35%;
 }
 
@@ -46,10 +47,12 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
   --fr-button-bg: var(--brand-pink, #ef779f);
   --fr-button-hover-bg: var(--brand-yellow, #f8c964);
   --fr-button-current-bg: var(--fr-button-bg);
+  --fr-button-label-color: #fff;
+  --fr-button-edge-mix: var(--fr-button-pink-edge-mix, 72%);
   --fr-button-ink: #070707;
   --fr-button-ink: color-mix(in srgb, var(--fr-button-current-bg) var(--fr-button-edge-mix, 20%), #000);
   background: var(--fr-button-current-bg);
-  color: var(--fr-button-ink);
+  color: var(--fr-button-label-color);
   border: 3px solid var(--fr-button-ink);
   border-radius: 8px;
   display: inline-flex;
@@ -71,9 +74,10 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .fr-detail-tickets:hover,
 .fr-detail-tickets:focus-visible {
   --fr-button-current-bg: var(--fr-button-hover-bg, var(--brand-yellow, #f8c964));
+  --fr-button-label-color: var(--fr-button-ink);
   --fr-button-edge-mix: var(--fr-button-yellow-edge-mix, 35%);
   background: var(--fr-button-current-bg);
-  color: var(--fr-button-ink);
+  color: var(--fr-button-label-color);
   box-shadow: 2px 2px 0 var(--fr-button-ink);
   transform: translate(2px, 2px);
 }
