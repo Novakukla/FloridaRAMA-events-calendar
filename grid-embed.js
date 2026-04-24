@@ -21,7 +21,6 @@
   }
 
   loadCSS('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap');
-  loadCSS('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
   loadCSS(BASE + 'shared.css');
 
   // ── Inject page-specific CSS ──
