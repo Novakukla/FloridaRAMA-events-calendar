@@ -5,6 +5,10 @@
   --brand-green: #3db489;
   --brand-yellow: #f8c964;
   --brand-orange: #f47948;
+  --fr-button-ink: #070707;
+  --fr-button-shadow: 4px 4px 0 var(--fr-button-ink);
+  --fr-button-edge-mix: 55%;
+  --fr-button-yellow-edge-mix: 35%;
 }
 
 body {
@@ -36,14 +40,49 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .fr-featured-card-body { padding: 12px 14px; color: #fff; min-height: 80px; }
 .fr-featured-card-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 4px; line-height: 1.3; }
 .fr-featured-card-subtitle { font-size: 0.82rem; opacity: 0.85; margin-top: 2px; line-height: 1.4; }
+.fr-featured-card-btn,
+.fr-featured-card-back-btn,
+.fr-detail-tickets {
+  --fr-button-bg: var(--brand-yellow, #f8c964);
+  --fr-button-hover-bg: var(--brand-pink, #ef779f);
+  --fr-button-current-bg: var(--fr-button-bg);
+  --fr-button-ink: #070707;
+  --fr-button-ink: color-mix(in srgb, var(--fr-button-current-bg) var(--fr-button-edge-mix, 20%), #000);
+  background: var(--fr-button-current-bg);
+  color: var(--fr-button-ink);
+  border: 3px solid var(--fr-button-ink);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  text-transform: none;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: var(--fr-button-shadow);
+  transition: box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.fr-featured-card-btn:hover,
+.fr-featured-card-btn:focus-visible,
+.fr-featured-card-back-btn:hover,
+.fr-featured-card-back-btn:focus-visible,
+.fr-detail-tickets:hover,
+.fr-detail-tickets:focus-visible {
+  --fr-button-current-bg: var(--fr-button-hover-bg, var(--brand-pink, #ef779f));
+  --fr-button-edge-mix: var(--fr-button-yellow-edge-mix, 35%);
+  background: var(--fr-button-current-bg);
+  color: var(--fr-button-ink);
+  box-shadow: 2px 2px 0 var(--fr-button-ink);
+  transform: translate(2px, 2px);
+}
+
 .fr-featured-card-btn {
   position: absolute; bottom: 14px; right: 14px;
-  background: var(--brand-pink); color: #fff; border: none;
-  padding: 8px 18px; border-radius: 8px;
-  font-size: 0.85rem; font-weight: 600;
-  cursor: pointer; transition: background 0.2s; text-decoration: none;
+  min-height: 40px; padding: 10px 16px;
+  font-size: 0.9rem; cursor: pointer; z-index: 1;
 }
-.fr-featured-card-btn:hover { background: var(--brand-orange); }
 
 /* ── Mobile flip cards ── */
 @media (max-width: 600px) {
@@ -77,12 +116,9 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
     margin-bottom: 12px; flex: 1; overflow-y: auto;
   }
   .fr-featured-card-back-btn {
-    display: inline-block; background: var(--brand-pink); color: #fff;
-    border: none; padding: 6px 16px; border-radius: 8px;
-    font-size: 0.8rem; font-weight: 600; cursor: pointer;
-    text-decoration: none; transition: background 0.2s; flex-shrink: 0;
+    min-height: 40px; padding: 10px 16px;
+    font-size: 0.9rem; cursor: pointer; flex-shrink: 0;
   }
-  .fr-featured-card-back-btn:hover { background: var(--brand-orange); }
   .fr-featured-card-img { aspect-ratio: 16/9; }
 }
 
@@ -110,12 +146,9 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
 .fr-detail-desc::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
 .fr-detail-desc::-webkit-scrollbar-track { background: transparent; }
 .fr-detail-tickets {
-  display: inline-block; background: var(--brand-pink); color: #fff;
-  border: none; padding: 14px 32px; border-radius: 10px;
-  font-size: 1.1rem; font-weight: 600; cursor: pointer;
-  text-decoration: none; transition: background 0.2s; align-self: flex-start;
+  min-height: 46px; padding: 12px 24px;
+  font-size: 1rem; cursor: pointer; align-self: flex-start;
 }
-.fr-detail-tickets:hover { background: var(--brand-orange); }
 .fr-detail-back {
   display: inline-flex; align-items: center; gap: 6px;
   background: none; border: none; color: #fff;
