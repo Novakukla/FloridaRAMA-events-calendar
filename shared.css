@@ -103,6 +103,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display:
     transition: transform 0.5s ease; transform-style: preserve-3d;
   }
   .fr-featured-card.flipped .fr-featured-card-inner { transform: rotateY(180deg); }
+  .fr-featured-card.flipped .fr-featured-card-btn { display: none; }
   .fr-featured-card-front,
   .fr-featured-card-back {
     width: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
