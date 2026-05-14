@@ -332,8 +332,15 @@ async function withPlaywright(fn) {
 		);
 	}
 
-	const browser = await pw.chromium.launch({ headless: true });
-	const context = await browser.newContext();
+	const browser = await pw.chromium.launch({
+		headless: true,
+		args: ["--disable-blink-features=AutomationControlled"],
+	});
+	const context = await browser.newContext({
+		userAgent:
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+		viewport: { width: 1280, height: 800 },
+	});
 	try {
 		return await fn({ browser, context });
 	} finally {
@@ -382,6 +389,14 @@ async function getItemUrlsFromListing(listingUrl) {
 			}, COMPANY);
 
 			itemUrls = [...new Set(abs)];
+
+			if (itemUrls.length === 0) {
+				const currentUrl = page.url();
+				const snippet = (await page.content().catch(() => "")).slice(0, 500);
+				console.warn(`  Browser render returned 0 items. Rendered URL: ${currentUrl}`);
+				console.warn(`  Page content snippet: ${snippet}`);
+			}
+
 			return { itemUrls, usedBrowser: true };
 		} finally {
 			await page.close().catch(() => {});
@@ -593,12 +608,31 @@ async function main() {
 
 	let itemUrls = [];
 	let usedBrowser = false;
-	try {
-		const got = await getItemUrlsFromListing(listingUrl);
-		itemUrls = got.itemUrls;
-		usedBrowser = got.usedBrowser;
-	} catch (err) {
-		console.warn(`Listing scrape failed (${err?.message || err}). Falling back to existing events.json item IDs.`);
+	const MAX_LISTING_ATTEMPTS = 3;
+	let listingError = null;
+	for (let attempt = 1; attempt <= MAX_LISTING_ATTEMPTS; attempt++) {
+		try {
+			const got = await getItemUrlsFromListing(listingUrl);
+			itemUrls = got.itemUrls;
+			usedBrowser = got.usedBrowser;
+			listingError = null;
+			if (itemUrls.length > 0) break;
+			if (attempt < MAX_LISTING_ATTEMPTS) {
+				console.warn(`Listing returned 0 items on attempt ${attempt}/${MAX_LISTING_ATTEMPTS}; retrying in 3 s…`);
+				await sleep(3000);
+			}
+		} catch (err) {
+			listingError = err;
+			if (attempt < MAX_LISTING_ATTEMPTS) {
+				console.warn(`Listing attempt ${attempt}/${MAX_LISTING_ATTEMPTS} failed (${err?.message || err}); retrying in 3 s…`);
+				await sleep(3000);
+			}
+		}
+	}
+
+	if (itemUrls.length === 0) {
+		const reason = listingError ? (listingError?.message || listingError) : "returned 0 items";
+		console.warn(`Listing scrape failed (${reason}). Falling back to existing events.json item IDs.`);
 		let existing = [];
 		try {
 			existing = JSON.parse(await fs.readFile(EVENTS_FILE, "utf8"));
