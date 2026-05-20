@@ -175,12 +175,20 @@ function todayYmdInTimeZone(timeZone) {
 }
 
 function parsePricesForAnchor(html) {
+	return parsePricesForAnchors(html)[0] || null;
+}
+
+function parsePricesForAnchors(html) {
 	// Looks like: Prices for <a ...>Saturday, January 31, 2026</a>
-	const m = html.match(
-		/Prices\s+for\s*<a[^>]+href=["']([^"']*\/availability\/\d+\/book\/[^"']*)["'][^>]*>([^<]+)<\/a>/i
-	);
-	if (!m) return null;
-	return { availabilityUrl: m[1], dateLabel: decodeHtmlEntities(m[2]) };
+	const entries = [];
+	const re = /Prices\s+for\s*<a[^>]+href=["']([^"']*\/availability\/\d+\/book\/[^"']*)["'][^>]*>([^<]+)<\/a>/gi;
+	for (const m of html.matchAll(re)) {
+		entries.push({
+			availabilityUrl: m[1],
+			dateLabel: decodeHtmlEntities(m[2]),
+		});
+	}
+	return entries;
 }
 
 function parseDateLabelToYmd(dateLabel) {
@@ -391,6 +399,32 @@ async function getItemUrlsFromListing(listingUrl) {
 			itemUrls = [...new Set(abs)];
 
 			if (itemUrls.length === 0) {
+				const itemButtons = page.getByRole("button", { name: /^Experience:/ });
+				const buttonCount = await itemButtons.count();
+				for (let i = 0; i < buttonCount; i++) {
+					await page.goto(listingUrl, { waitUntil: "domcontentloaded" });
+					await page.waitForLoadState("networkidle").catch(() => {});
+
+					const button = page.getByRole("button", { name: /^Experience:/ }).nth(i);
+					try {
+						await Promise.all([
+							page.waitForURL(/\/embeds\/book\/[^/]+\/items\/\d+\//i, { timeout: 10_000 }),
+							button.click(),
+						]);
+
+						const resolved = normalizeFareharborUrl(page.url());
+						if (resolved.includes(`/embeds/book/${COMPANY}/items/`)) {
+							itemUrls.push(resolved);
+						}
+					} catch {
+						// skip buttons that don't navigate to an item page
+					}
+				}
+
+				itemUrls = [...new Set(itemUrls)];
+			}
+
+			if (itemUrls.length === 0) {
 				const currentUrl = page.url();
 				const snippet = (await page.content().catch(() => "")).slice(0, 500);
 				console.warn(`  Browser render returned 0 items. Rendered URL: ${currentUrl}`);
@@ -407,6 +441,28 @@ async function getItemUrlsFromListing(listingUrl) {
 async function scrapeItemViaPlaywright(context, itemUrl) {
 	const page = await context.newPage();
 	try {
+		const itemId = itemIdFromFareharborUrl(itemUrl);
+		const collectAvailabilityEntries = async () => {
+			const entries = await page
+				.locator('a[href*="/availability/"]')
+				.evaluateAll((nodes) =>
+					nodes
+						.map((node) => ({
+							availabilityUrl: node.getAttribute("href") || "",
+							dateLabel: (node.textContent || "").trim(),
+						}))
+						.filter((entry) => /\/availability\/\d+\/book\//i.test(entry.availabilityUrl))
+						.filter((entry) => /\d{4}/.test(entry.dateLabel))
+				);
+
+			const unique = new Map();
+			for (const entry of entries) {
+				const key = `${entry.availabilityUrl}::${entry.dateLabel}`;
+				if (!unique.has(key)) unique.set(key, entry);
+			}
+			return [...unique.values()];
+		};
+
 		await page.goto(itemUrl, { waitUntil: "domcontentloaded" });
 		await page.waitForTimeout(1500);
 		await page.waitForLoadState("networkidle").catch(() => {});
@@ -419,6 +475,27 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 				return t && !/\[!\s*item\.name\s*!\]/i.test(t);
 			}, { timeout: 10_000 })
 			.catch(() => {});
+
+		let availabilityEntries = await collectAvailabilityEntries();
+		if (availabilityEntries.length === 0 && itemId) {
+			const now = new Date();
+			const seen = new Map();
+			for (let offset = 0; offset < 6; offset++) {
+				const monthDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+				const year = String(monthDate.getFullYear());
+				const month = String(monthDate.getMonth() + 1).padStart(2, "0");
+				const calendarUrl = `https://fareharbor.com/embeds/book/${COMPANY}/items/${itemId}/calendar/${year}/${month}/?full-items=yes&flow=${encodeURIComponent(FLOW)}`;
+
+				await page.goto(calendarUrl, { waitUntil: "domcontentloaded" });
+				await page.waitForLoadState("networkidle").catch(() => {});
+
+				for (const entry of await collectAvailabilityEntries()) {
+					const key = `${entry.availabilityUrl}::${entry.dateLabel}`;
+					if (!seen.has(key)) seen.set(key, entry);
+				}
+			}
+			availabilityEntries = [...seen.values()];
+		}
 
 		const dom = await page.evaluate(() => {
 			const h1 = document.querySelector("h1");
@@ -515,17 +592,6 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 
 			const thumbnail = best?.url || normalizeUrl(metaThumb);
 
-			// Grab first visible availability link.
-			const links = Array.from(document.querySelectorAll("a"));
-			const a = links.find((x) => {
-				const href = x.getAttribute("href") || "";
-				const txt = (x.textContent || "").trim();
-				return /\/availability\/\d+\/book\//i.test(href) && /\d{4}/.test(txt);
-			});
-
-			const availabilityUrl = a ? a.getAttribute("href") : null;
-			const dateLabel = a ? (a.textContent || "").trim() : null;
-
 			// Extract description from "Activity details" section.
 			let description = null;
 			const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6, [class*="heading"], [class*="title"], [class*="section"]'));
@@ -554,10 +620,15 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 			}
 
 			const bodyText = document.body?.innerText || "";
-			return { title, thumbnail, availabilityUrl, dateLabel, bodyText, description };
+			return { title, thumbnail, bodyText, description };
 		});
 
-		return dom;
+		return {
+			...dom,
+			availabilityEntries,
+			availabilityUrl: availabilityEntries[0]?.availabilityUrl || null,
+			dateLabel: availabilityEntries[0]?.dateLabel || null,
+		};
 	} finally {
 		await page.close().catch(() => {});
 	}
@@ -685,7 +756,8 @@ async function main() {
 			let title = extractTitleFromHtml(html) || "Untitled Event";
 			let thumbnail = extractBestImageFromHtml(html, itemUrl);
 			let description = extractDescriptionFromHtml(html);
-			let prices = parsePricesForAnchor(html);
+			let availabilityEntries = parsePricesForAnchors(html);
+			let prices = availabilityEntries[0] || null;
 			let bodyText = html;
 			let trFromText = parseEventTimeRange(bodyText || "") || parseStartTimeAndDuration(bodyText || "");
 
@@ -705,46 +777,52 @@ async function main() {
 				if (dom?.title) title = dom.title;
 				if (dom?.thumbnail) thumbnail = dom.thumbnail;
 				if (dom?.description) description = dom.description;
-				if (dom?.availabilityUrl && dom?.dateLabel) {
-					prices = { availabilityUrl: dom.availabilityUrl, dateLabel: dom.dateLabel };
+				if (dom?.availabilityEntries?.length) {
+					availabilityEntries = dom.availabilityEntries;
+					prices = availabilityEntries[0];
+				} else if (dom?.availabilityUrl && dom?.dateLabel) {
+					availabilityEntries = [{ availabilityUrl: dom.availabilityUrl, dateLabel: dom.dateLabel }];
+					prices = availabilityEntries[0];
 				}
 				if (dom?.bodyText) bodyText = dom.bodyText;
 				trFromText = parseEventTimeRange(bodyText || "") || parseStartTimeAndDuration(bodyText || "");
 			}
 
-			if (!prices) {
+			if (!availabilityEntries.length) {
 				console.warn("  No availability found; skipping.");
 				continue;
 			}
 
-			const ymd = parseDateLabelToYmd(prices.dateLabel);
-			if (!ymd) {
-				console.warn(`  Could not parse date from: ${prices.dateLabel}`);
-				continue;
-			}
+			for (const availability of availabilityEntries) {
+				const ymd = parseDateLabelToYmd(availability.dateLabel);
+				if (!ymd) {
+					console.warn(`  Could not parse date from: ${availability.dateLabel}`);
+					continue;
+				}
 
-			const tr = trFromText;
-			let startIso;
-			let endIso;
-			if (tr) {
-				const s = to24Hour(tr.start);
-				const e = to24Hour(tr.end);
-				startIso = ymdAndTimeToIsoLocal(ymd, s.hour, s.minute);
-				endIso = ymdAndTimeToIsoLocal(ymd, e.hour, e.minute);
-			} else {
-				startIso = ymdAndTimeToIsoLocal(ymd, 10, 0);
-				endIso = ymdAndTimeToIsoLocal(ymd, 20, 0);
-			}
+				const tr = trFromText;
+				let startIso;
+				let endIso;
+				if (tr) {
+					const s = to24Hour(tr.start);
+					const e = to24Hour(tr.end);
+					startIso = ymdAndTimeToIsoLocal(ymd, s.hour, s.minute);
+					endIso = ymdAndTimeToIsoLocal(ymd, e.hour, e.minute);
+				} else {
+					startIso = ymdAndTimeToIsoLocal(ymd, 10, 0);
+					endIso = ymdAndTimeToIsoLocal(ymd, 20, 0);
+				}
 
-			const availabilityUrl = normalizeFareharborUrl(prices.availabilityUrl);
-			scraped.push({
-				title,
-				start: startIso,
-				end: endIso,
-				url: availabilityUrl,
-				thumbnail: thumbnail || undefined,
-				description: description || undefined,
-			});
+				const availabilityUrl = normalizeFareharborUrl(availability.availabilityUrl);
+				scraped.push({
+					title,
+					start: startIso,
+					end: endIso,
+					url: availabilityUrl,
+					thumbnail: thumbnail || undefined,
+					description: description || undefined,
+				});
+			}
 
 			await sleep(250);
 		}
