@@ -119,15 +119,7 @@
       let meta = '';
       if (ev.start)
       {
-        const d = new Date(ev.start);
-        meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-             + ' \u2022 '
-             + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        if (ev.end)
-        {
-          const ed = new Date(ev.end);
-          meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        }
+        meta = formatEventDateRange(ev.start, ev.end);
       }
 
       const descHtml = ev.description
@@ -183,15 +175,7 @@
       let meta = '';
       if (ev.start)
       {
-        const d = new Date(ev.start);
-        meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-             + ' \u2022 '
-             + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        if (ev.end)
-        {
-          const ed = new Date(ev.end);
-          meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        }
+        meta = formatEventDateRange(ev.start, ev.end);
       }
 
       const descHtml = ev.description
@@ -227,6 +211,76 @@
     {
       const existing = document.getElementById('fr-cal-modal-overlay');
       if (existing) existing.remove();
+    }
+
+    function isValidDate(d)
+    {
+      return d instanceof Date && !Number.isNaN(d.getTime());
+    }
+
+    function formatEventDateRange(startValue, endValue)
+    {
+      const start = startValue ? new Date(startValue) : null;
+      if (!isValidDate(start)) return '';
+
+      const end = endValue ? new Date(endValue) : null;
+      const dateOptions = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+      const timeOptions = { hour: 'numeric', minute: '2-digit' };
+      const startDate = start.toLocaleDateString('en-US', dateOptions);
+      const startTime = start.toLocaleTimeString('en-US', timeOptions);
+
+      if (!isValidDate(end) || end <= start)
+      {
+        return `${startDate} \u2022 ${startTime}`;
+      }
+
+      const endDate = end.toLocaleDateString('en-US', dateOptions);
+      const endTime = end.toLocaleTimeString('en-US', timeOptions);
+      const sameDate = start.toDateString() === end.toDateString();
+
+      return sameDate
+        ? `${startDate} \u2022 ${startTime} \u2013 ${endTime}`
+        : `${startDate} \u2022 ${startTime} \u2013 ${endDate} \u2022 ${endTime}`;
+    }
+
+    function pad2(n)
+    {
+      return String(n).padStart(2, '0');
+    }
+
+    function dateKey(d)
+    {
+      return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    }
+
+    function addDays(d, days)
+    {
+      const next = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      next.setDate(next.getDate() + days);
+      return next;
+    }
+
+    function prepareCalendarEvents(sourceEvents)
+    {
+      return sourceEvents.map(event =>
+      {
+        const start = event.start ? new Date(event.start) : null;
+        const end = event.end ? new Date(event.end) : null;
+
+        if (!isValidDate(start) || !isValidDate(end) || end <= start || start.toDateString() === end.toDateString())
+        {
+          return event;
+        }
+
+        return {
+          ...event,
+          allDay: true,
+          start: dateKey(start),
+          end: dateKey(addDays(end, 1)),
+          originalStart: event.start,
+          originalEnd: event.end
+        };
+      });
     }
 
     // load events + build calendar
@@ -467,7 +521,7 @@
       {
         initialView: 'dayGridMonth',
         height: 'auto',
-        events: events,
+        events: prepareCalendarEvents(events),
 
         // calendar clicks: modal inside calendar area, or direct link
         eventClick: function (info)
@@ -480,8 +534,8 @@
           {
             openCalendarModal({
               title: info.event.title,
-              start: info.event.start ? info.event.start.toISOString() : '',
-              end: info.event.end ? info.event.end.toISOString() : '',
+              start: props.originalStart || (info.event.start ? info.event.start.toISOString() : ''),
+              end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
               thumbnail: props.thumbnail || '',
               description: props.description || '',
               url: info.event.url || ''
@@ -495,8 +549,8 @@
           {
             openCalendarModal({
               title: info.event.title,
-              start: info.event.start ? info.event.start.toISOString() : '',
-              end: info.event.end ? info.event.end.toISOString() : '',
+              start: props.originalStart || (info.event.start ? info.event.start.toISOString() : ''),
+              end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
               thumbnail: props.thumbnail || '',
               description: props.description || ''
             });

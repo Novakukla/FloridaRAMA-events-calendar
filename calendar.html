@@ -134,55 +134,39 @@
       return String(n).padStart(2, '0');
     }
 
-    function toDateKey(d)
+    function dateKey(d)
     {
       return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
     }
 
-    function timePart(value)
+    function addDays(d, days)
     {
-      return String(value || '').split('T')[1] || '00:00:00';
+      const next = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      next.setDate(next.getDate() + days);
+      return next;
     }
 
-    function expandMultiDayEventsForCalendar(sourceEvents)
+    function prepareCalendarEvents(sourceEvents)
     {
-      const expanded = [];
-
-      for (const event of sourceEvents)
+      return sourceEvents.map(event =>
       {
         const start = event.start ? new Date(event.start) : null;
         const end = event.end ? new Date(event.end) : null;
 
         if (!isValidDate(start) || !isValidDate(end) || end <= start || start.toDateString() === end.toDateString())
         {
-          expanded.push(event);
-          continue;
+          return event;
         }
 
-        const startTime = timePart(event.start);
-        const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-        const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-        let days = 0;
-
-        while (cursor <= endDay && days < 90)
-        {
-          const key = toDateKey(cursor);
-          const occurrence = {
-            ...event,
-            id: `${event.id || event.title || 'event'}-${key}`,
-            start: `${key}T${startTime}`,
-            originalStart: event.start,
-            originalEnd: event.end
-          };
-          delete occurrence.end;
-
-          expanded.push(occurrence);
-          cursor.setDate(cursor.getDate() + 1);
-          days++;
-        }
-      }
-
-      return expanded;
+        return {
+          ...event,
+          allDay: true,
+          start: dateKey(start),
+          end: dateKey(addDays(end, 1)),
+          originalStart: event.start,
+          originalEnd: event.end
+        };
+      });
     }
 
     function openCalendarModal(ev)
@@ -289,10 +273,9 @@
           byKey.set(key, event);
         }
 
-        const dedupedEvents = Array.from(byKey.values()).sort(
+        events = Array.from(byKey.values()).sort(
           (a, b) => String(a.start || '').localeCompare(String(b.start || ''))
         );
-        events = expandMultiDayEventsForCalendar(dedupedEvents);
       }
       catch (err)
       {
@@ -304,7 +287,7 @@
       {
         initialView: 'dayGridMonth',
         height: 'auto',
-        events: events,
+        events: prepareCalendarEvents(events),
 
         eventClick: function (info)
         {
