@@ -140,7 +140,6 @@
       }
 
       var startTime = timePart(event.start);
-      var endTime = timePart(event.end);
       var endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
       var cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
       var days = 0;
@@ -150,14 +149,9 @@
         var occurrence = Object.assign({}, event, {
           id: (event.id || event.title || 'event') + '-' + key,
           start: key + 'T' + startTime,
-          end: key + 'T' + endTime,
           originalStart: event.start,
           originalEnd: event.end
         });
-
-        if (new Date(occurrence.end) <= new Date(occurrence.start)) {
-          delete occurrence.end;
-        }
 
         expanded.push(occurrence);
         cursor.setDate(cursor.getDate() + 1);

@@ -125,8 +125,12 @@
       border-color: #9b6dd7;
     }
 
-    .row { display: flex; gap: 12px; }
-    .row > div { flex: 1; }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .row > div { min-width: 0; }
 
     .btn {
       display: inline-block;
@@ -515,6 +519,34 @@
         : `${startDate} ${startTime} - ${endDate} ${endTime}`;
     }
 
+    function normalizeComparable(s)
+    {
+      return String(s || '').trim().toLowerCase();
+    }
+
+    function eventDateKey(value)
+    {
+      return String(value || '').split('T')[0] || '';
+    }
+
+    function isDuplicateRangeCopy(candidate, rangeEvent)
+    {
+      if (candidate === rangeEvent) return false;
+
+      const candidateDate = eventDateKey(candidate.start);
+      const rangeStart = eventDateKey(rangeEvent.start);
+      const rangeEnd = eventDateKey(rangeEvent.end);
+
+      if (!candidateDate || !rangeStart || !rangeEnd) return false;
+      if (candidateDate < rangeStart || candidateDate > rangeEnd) return false;
+
+      const sameTitle = normalizeComparable(candidate.title) === normalizeComparable(rangeEvent.title);
+      const sameThumbnail = normalizeComparable(candidate.thumbnail) === normalizeComparable(rangeEvent.thumbnail);
+      const sameDescription = normalizeComparable(candidate.description) === normalizeComparable(rangeEvent.description);
+
+      return sameTitle && sameThumbnail && sameDescription;
+    }
+
     function previewThumb(url)
     {
       const img = document.getElementById('thumb-preview');
@@ -667,12 +699,20 @@
         if (isEditing)
         {
           currentEvents[editingIndex] = eventData;
+          if (endDateInput && endDate !== date)
+          {
+            currentEvents = currentEvents.filter(ev => !isDuplicateRangeCopy(ev, eventData));
+          }
           await saveEvents(`Edit event: ${title}`);
           setFormStatus(`"${title}" updated!`, 'ok');
         }
         else
         {
           currentEvents.push(eventData);
+          if (endDateInput && endDate !== date)
+          {
+            currentEvents = currentEvents.filter(ev => !isDuplicateRangeCopy(ev, eventData));
+          }
           await saveEvents(`Add event: ${title}`);
           setFormStatus(`"${title}" added!`, 'ok');
         }

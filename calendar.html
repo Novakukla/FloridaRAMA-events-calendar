@@ -160,7 +160,6 @@
         }
 
         const startTime = timePart(event.start);
-        const endTime = timePart(event.end);
         const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
         const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
         let days = 0;
@@ -172,15 +171,9 @@
             ...event,
             id: `${event.id || event.title || 'event'}-${key}`,
             start: `${key}T${startTime}`,
-            end: `${key}T${endTime}`,
             originalStart: event.start,
             originalEnd: event.end
           };
-
-          if (new Date(occurrence.end) <= new Date(occurrence.start))
-          {
-            delete occurrence.end;
-          }
 
           expanded.push(occurrence);
           cursor.setDate(cursor.getDate() + 1);
