@@ -152,6 +152,7 @@
           originalStart: event.start,
           originalEnd: event.end
         });
+        delete occurrence.end;
 
         expanded.push(occurrence);
         cursor.setDate(cursor.getDate() + 1);

@@ -339,6 +339,32 @@
     let currentSha = null;
     let editingIndex = -1; // -1 = add mode, >= 0 = editing that index
 
+    function pad2(n)
+    {
+      return String(n).padStart(2, '0');
+    }
+
+    function currentMonthStartKey()
+    {
+      const now = new Date();
+      return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`;
+    }
+
+    function eventEndDateKey(event)
+    {
+      return String(event?.end || event?.start || '').slice(0, 10);
+    }
+
+    function pruneEventsBeforeCurrentMonth(events)
+    {
+      const monthStart = currentMonthStartKey();
+      return events.filter(event =>
+      {
+        const eventDate = eventEndDateKey(event);
+        return eventDate && eventDate >= monthStart;
+      });
+    }
+
     // ── Setup / Auth ──
 
     function getConfig()
@@ -407,11 +433,12 @@
       currentSha = data.sha;
       const bytes = Uint8Array.from(atob(data.content.replace(/\n/g, '')), c => c.charCodeAt(0));
       const content = new TextDecoder().decode(bytes);
-      currentEvents = JSON.parse(content);
+      currentEvents = pruneEventsBeforeCurrentMonth(JSON.parse(content));
     }
 
     async function saveEvents(message)
     {
+      currentEvents = pruneEventsBeforeCurrentMonth(currentEvents);
       const jsonStr = JSON.stringify(currentEvents, null, 2) + '\n';
       const bytes = new TextEncoder().encode(jsonStr);
       const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
