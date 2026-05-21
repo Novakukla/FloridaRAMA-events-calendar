@@ -283,9 +283,16 @@
 
         <div class="row">
           <div>
-            <label for="ev-date">Date <span class="req">*</span></label>
+            <label for="ev-date">Start Date <span class="req">*</span></label>
             <input type="date" id="ev-date" />
           </div>
+          <div>
+            <label for="ev-end-date">End Date</label>
+            <input type="date" id="ev-end-date" />
+          </div>
+        </div>
+
+        <div class="row">
           <div>
             <label for="ev-start">Start Time <span class="req">*</span></label>
             <input type="time" id="ev-start" />
@@ -447,11 +454,7 @@
 
       list.innerHTML = sorted.map((ev, i) =>
       {
-        const d = ev.start ? new Date(ev.start) : null;
-        const dateStr = d
-          ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
-            + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-          : '';
+        const dateStr = formatEventDateRange(ev.start, ev.end);
 
         const imgHtml = ev.thumbnail
           ? `<img src="${escHtml(ev.thumbnail)}" alt="" />`
@@ -480,6 +483,36 @@
       const d = document.createElement('div');
       d.textContent = s;
       return d.innerHTML;
+    }
+
+    function isValidDate(d)
+    {
+      return d instanceof Date && !Number.isNaN(d.getTime());
+    }
+
+    function formatEventDateRange(startValue, endValue)
+    {
+      const start = startValue ? new Date(startValue) : null;
+      if (!isValidDate(start)) return '';
+
+      const end = endValue ? new Date(endValue) : null;
+      const dateOptions = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+      const timeOptions = { hour: 'numeric', minute: '2-digit' };
+      const startDate = start.toLocaleDateString('en-US', dateOptions);
+      const startTime = start.toLocaleTimeString('en-US', timeOptions);
+
+      if (!isValidDate(end) || end <= start)
+      {
+        return `${startDate} ${startTime}`;
+      }
+
+      const endDate = end.toLocaleDateString('en-US', dateOptions);
+      const endTime = end.toLocaleTimeString('en-US', timeOptions);
+      const sameDate = start.toDateString() === end.toDateString();
+
+      return sameDate
+        ? `${startDate} ${startTime} - ${endTime}`
+        : `${startDate} ${startTime} - ${endDate} ${endTime}`;
     }
 
     function previewThumb(url)
@@ -527,6 +560,7 @@
 
       document.getElementById('ev-title').value = ev.title || '';
       document.getElementById('ev-date').value = startDT[0] || '';
+      document.getElementById('ev-end-date').value = endDT[0] || '';
       document.getElementById('ev-start').value = (startDT[1] || '').replace(/:00$/, '');
       document.getElementById('ev-end').value = (endDT[1] || '').replace(/:00$/, '');
       document.getElementById('ev-url').value = ev.url || '';
@@ -551,6 +585,7 @@
 
       document.getElementById('ev-title').value = '';
       document.getElementById('ev-date').value = '';
+      document.getElementById('ev-end-date').value = '';
       document.getElementById('ev-start').value = '';
       document.getElementById('ev-end').value = '';
       document.getElementById('ev-url').value = '';
@@ -564,6 +599,7 @@
     {
       const title = document.getElementById('ev-title').value.trim();
       const date = document.getElementById('ev-date').value;
+      const endDateInput = document.getElementById('ev-end-date').value;
       const startTime = document.getElementById('ev-start').value;
       const endTime = document.getElementById('ev-end').value;
       const url = document.getElementById('ev-url').value.trim();
@@ -588,6 +624,23 @@
         return;
       }
 
+      const endDate = endDateInput || date;
+      const effectiveEndTime = endTime || (endDateInput && endDateInput !== date ? '23:59' : '');
+      const startDateTime = `${date}T${startTime}:00`;
+      const endDateTime = effectiveEndTime ? `${endDate}T${effectiveEndTime}:00` : '';
+
+      if (endDate < date)
+      {
+        setFormStatus('End date cannot be before the start date.', 'err');
+        return;
+      }
+
+      if (endDateTime && new Date(endDateTime) <= new Date(startDateTime))
+      {
+        setFormStatus('End date/time must be after the start date/time.', 'err');
+        return;
+      }
+
       const btn = document.getElementById('add-btn');
       if (btn.disabled) return;
       btn.disabled = true;
@@ -603,10 +656,10 @@
         const eventData = {
           id: isEditing ? (currentEvents[editingIndex]?.id || generateId(title, date)) : generateId(title, date),
           title,
-          start: `${date}T${startTime}:00`,
+          start: startDateTime,
         };
 
-        if (endTime) eventData.end = `${date}T${endTime}:00`;
+        if (endDateTime) eventData.end = endDateTime;
         if (url) eventData.url = url;
         if (thumbnail) eventData.thumbnail = thumbnail;
         if (description) eventData.description = description;

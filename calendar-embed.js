@@ -87,6 +87,87 @@
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function isValidDate(d) {
+    return d instanceof Date && !Number.isNaN(d.getTime());
+  }
+
+  function formatEventDateRange(startValue, endValue) {
+    var start = startValue ? new Date(startValue) : null;
+    if (!isValidDate(start)) return '';
+
+    var end = endValue ? new Date(endValue) : null;
+    var dateOptions = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+    var timeOptions = { hour: 'numeric', minute: '2-digit' };
+    var startDate = start.toLocaleDateString('en-US', dateOptions);
+    var startTime = start.toLocaleTimeString('en-US', timeOptions);
+
+    if (!isValidDate(end) || end <= start) {
+      return startDate + ' \u2022 ' + startTime;
+    }
+
+    var endDate = end.toLocaleDateString('en-US', dateOptions);
+    var endTime = end.toLocaleTimeString('en-US', timeOptions);
+    var sameDate = start.toDateString() === end.toDateString();
+
+    return sameDate
+      ? startDate + ' \u2022 ' + startTime + ' \u2013 ' + endTime
+      : startDate + ' \u2022 ' + startTime + ' \u2013 ' + endDate + ' \u2022 ' + endTime;
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function toDateKey(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function timePart(value) {
+    return String(value || '').split('T')[1] || '00:00:00';
+  }
+
+  function expandMultiDayEventsForCalendar(sourceEvents) {
+    var expanded = [];
+
+    for (var i = 0; i < sourceEvents.length; i++) {
+      var event = sourceEvents[i];
+      var start = event.start ? new Date(event.start) : null;
+      var end = event.end ? new Date(event.end) : null;
+
+      if (!isValidDate(start) || !isValidDate(end) || end <= start || start.toDateString() === end.toDateString()) {
+        expanded.push(event);
+        continue;
+      }
+
+      var startTime = timePart(event.start);
+      var endTime = timePart(event.end);
+      var endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      var cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      var days = 0;
+
+      while (cursor <= endDay && days < 90) {
+        var key = toDateKey(cursor);
+        var occurrence = Object.assign({}, event, {
+          id: (event.id || event.title || 'event') + '-' + key,
+          start: key + 'T' + startTime,
+          end: key + 'T' + endTime,
+          originalStart: event.start,
+          originalEnd: event.end
+        });
+
+        if (new Date(occurrence.end) <= new Date(occurrence.start)) {
+          delete occurrence.end;
+        }
+
+        expanded.push(occurrence);
+        cursor.setDate(cursor.getDate() + 1);
+        days++;
+      }
+    }
+
+    return expanded;
+  }
+
   function openCalendarModal(ev) {
     closeCalendarModal();
 
@@ -96,14 +177,7 @@
 
     var meta = '';
     if (ev.start) {
-      var d = new Date(ev.start);
-      meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-           + ' \u2022 '
-           + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      if (ev.end) {
-        var ed = new Date(ev.end);
-        meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      }
+      meta = formatEventDateRange(ev.start, ev.end);
     }
 
     var descHtml = ev.description
@@ -191,9 +265,10 @@
         byKey.set(key, event);
       }
 
-      events = Array.from(byKey.values()).sort(function (a, b) {
+      var dedupedEvents = Array.from(byKey.values()).sort(function (a, b) {
         return String(a.start || '').localeCompare(String(b.start || ''));
       });
+      events = expandMultiDayEventsForCalendar(dedupedEvents);
     } catch (err) {
       console.error('Failed to load calendar data files', err);
     }
@@ -211,8 +286,8 @@
         if (hasDesc) {
           openCalendarModal({
             title: info.event.title,
-            start: info.event.start ? info.event.start.toISOString() : '',
-            end: info.event.end ? info.event.end.toISOString() : '',
+            start: props.originalStart || (info.event.start ? info.event.start.toISOString() : ''),
+            end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
             thumbnail: props.thumbnail || '',
             description: props.description || '',
             url: info.event.url || ''
@@ -222,8 +297,8 @@
         } else {
           openCalendarModal({
             title: info.event.title,
-            start: info.event.start ? info.event.start.toISOString() : '',
-            end: info.event.end ? info.event.end.toISOString() : '',
+            start: props.originalStart || (info.event.start ? info.event.start.toISOString() : ''),
+            end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
             thumbnail: props.thumbnail || '',
             description: props.description || ''
           });

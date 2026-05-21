@@ -45,6 +45,36 @@
     let allEvents = [];
     let currentPage = 0;
 
+    function isValidDate(d)
+    {
+      return d instanceof Date && !Number.isNaN(d.getTime());
+    }
+
+    function formatEventDateRange(startValue, endValue)
+    {
+      const start = startValue ? new Date(startValue) : null;
+      if (!isValidDate(start)) return '';
+
+      const end = endValue ? new Date(endValue) : null;
+      const dateOptions = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+      const timeOptions = { hour: 'numeric', minute: '2-digit' };
+      const startDate = start.toLocaleDateString('en-US', dateOptions);
+      const startTime = start.toLocaleTimeString('en-US', timeOptions);
+
+      if (!isValidDate(end) || end <= start)
+      {
+        return `${startDate} ${startTime}`;
+      }
+
+      const endDate = end.toLocaleDateString('en-US', dateOptions);
+      const endTime = end.toLocaleTimeString('en-US', timeOptions);
+      const sameDate = start.toDateString() === end.toDateString();
+
+      return sameDate
+        ? `${startDate} ${startTime} - ${endTime}`
+        : `${startDate} ${startTime} - ${endDate} ${endTime}`;
+    }
+
     function openEventModal(ev)
     {
       const detail = document.getElementById('fr-detail');
@@ -53,24 +83,12 @@
 
       const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+      const meta = formatEventDateRange(ev.start, ev.end);
+
       let imgHtml = '';
       if (ev.thumbnail)
       {
         imgHtml = `<div class="fr-detail-img"><img src="${esc(ev.thumbnail)}" alt="${esc(ev.title)}" /></div>`;
-      }
-
-      let meta = '';
-      if (ev.start)
-      {
-        const d = new Date(ev.start);
-        meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-             + ' \u2022 '
-             + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        if (ev.end)
-        {
-          const ed = new Date(ev.end);
-          meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        }
       }
 
       const descHtml = ev.description
@@ -164,16 +182,7 @@
 
         if (item.start)
         {
-          const d = new Date(item.start);
-          const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-          const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-          let label = dateStr + ' ' + timeStr;
-          if (item.end)
-          {
-            const ed = new Date(item.end);
-            label += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-          }
-          metaRow.textContent = label;
+          metaRow.textContent = formatEventDateRange(item.start, item.end);
         }
 
         body.appendChild(metaRow);

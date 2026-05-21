@@ -48,6 +48,33 @@
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function isValidDate(d) {
+    return d instanceof Date && !Number.isNaN(d.getTime());
+  }
+
+  function formatEventDateRange(startValue, endValue) {
+    var start = startValue ? new Date(startValue) : null;
+    if (!isValidDate(start)) return '';
+
+    var end = endValue ? new Date(endValue) : null;
+    var dateOptions = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+    var timeOptions = { hour: 'numeric', minute: '2-digit' };
+    var startDate = start.toLocaleDateString('en-US', dateOptions);
+    var startTime = start.toLocaleTimeString('en-US', timeOptions);
+
+    if (!isValidDate(end) || end <= start) {
+      return startDate + ' ' + startTime;
+    }
+
+    var endDate = end.toLocaleDateString('en-US', dateOptions);
+    var endTime = end.toLocaleTimeString('en-US', timeOptions);
+    var sameDate = start.toDateString() === end.toDateString();
+
+    return sameDate
+      ? startDate + ' ' + startTime + ' - ' + endTime
+      : startDate + ' ' + startTime + ' - ' + endDate + ' ' + endTime;
+  }
+
   function optimizedThumbnailUrl(rawUrl) {
     if (!rawUrl || typeof rawUrl !== 'string') return '';
 
@@ -96,17 +123,7 @@
       ? '<div class="fr-detail-img"><img src="' + esc(imgSrc) + '" alt="' + esc(ev.title) + '" loading="lazy" decoding="async" /></div>'
       : '';
 
-    var meta = '';
-    if (ev.start) {
-      var d = new Date(ev.start);
-      meta = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-           + ' \u2022 '
-           + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      if (ev.end) {
-        var ed = new Date(ev.end);
-        meta += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      }
-    }
+    var meta = formatEventDateRange(ev.start, ev.end);
 
     var descHtml = ev.description
       ? '<div class="fr-detail-desc">' + esc(ev.description) + '</div>'
@@ -211,15 +228,7 @@
       metaRow.className = 'fr-featured-card-subtitle';
 
       if (item.start) {
-        var d = new Date(item.start);
-        var dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-        var timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        var label = dateStr + ' ' + timeStr;
-        if (item.end) {
-          var ed = new Date(item.end);
-          label += ' \u2013 ' + ed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        }
-        metaRow.textContent = label;
+        metaRow.textContent = formatEventDateRange(item.start, item.end);
       }
 
       body.appendChild(metaRow);
