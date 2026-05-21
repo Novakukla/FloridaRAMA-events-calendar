@@ -51,7 +51,8 @@
     '.fc-daygrid-event-harness { height: auto !important; margin-bottom: 4px; }' +
     '.fc-daygrid-event { height: auto !important; white-space: normal; padding: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }' +
     '.fc-daygrid-event:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }' +
-    '.fc-daygrid-day-events, .fc-daygrid-event-harness, .fc-daygrid-event { width: 100%; max-width: 100%; box-sizing: border-box; margin: 0; }' +
+    '.fc-daygrid-day-events { width: 100%; box-sizing: border-box; }' +
+    '.fc-daygrid-event { width: 100%; max-width: 100%; box-sizing: border-box; margin: 0; }' +
     '.fr-event-card { display: flex; flex-direction: column; font-size: 11px; color: #fff; width: 100%; box-sizing: border-box; min-height: 200px; font-family: "Baloo 2", sans-serif; }' +
     '.fr-event-card img { width: 100%; height: 150px; object-fit: cover; display: block; }' +
     '.fr-event-title { padding: 6px; font-weight: 600; font-size: 15px; }' +
