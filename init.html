@@ -282,6 +282,14 @@
       });
     }
 
+    function eventIsUpcoming(event, now)
+    {
+      const start = event.start ? new Date(event.start) : null;
+      const end = event.end ? new Date(event.end) : null;
+      const compare = isValidDate(end) ? end : start;
+      return isValidDate(compare) && compare >= now;
+    }
+
     // load events + build calendar
     document.addEventListener('DOMContentLoaded', async function ()
     {
@@ -354,7 +362,7 @@
         if (gridEl && events.length)
         {
           const now = new Date();
-          const upcoming = events.filter(e => new Date(e.start) >= now);
+          const upcoming = events.filter(e => eventIsUpcoming(e, now));
           // deduplicate by title so recurring events only show once
           const seen = new Set();
           const unique = [];

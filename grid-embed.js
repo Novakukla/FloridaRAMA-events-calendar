@@ -109,6 +109,13 @@
     }
   }
 
+  function eventIsUpcoming(event, now) {
+    var start = event.start ? new Date(event.start) : null;
+    var end = event.end ? new Date(event.end) : null;
+    var compare = isValidDate(end) ? end : start;
+    return isValidDate(compare) && compare >= now;
+  }
+
   var PAGE_SIZE = 2;
   var allEvents = [];
   var currentPage = 0;
@@ -428,7 +435,7 @@
       });
 
       var now = new Date();
-      var upcoming = events.filter(function (e) { return new Date(e.start) >= now; });
+      var upcoming = events.filter(function (e) { return eventIsUpcoming(e, now); });
 
       var seen = new Set();
       for (var i = 0; i < upcoming.length; i++) {
