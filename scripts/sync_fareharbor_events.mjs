@@ -114,6 +114,30 @@ function extractDescriptionFromHtml(html) {
 	return null;
 }
 
+function extractDescriptionFromText(text) {
+	const lines = String(text || "")
+		.replaceAll(/\u00A0/g, " ")
+		.split(/\r?\n+/)
+		.map((line) => line.replaceAll(/\s+/g, " ").trim())
+		.filter(Boolean);
+	if (!lines.length) return null;
+
+	const startIndex = lines.findIndex((line) => /^details$/i.test(line));
+	if (startIndex === -1) return null;
+
+	const stopRe =
+		/^(additional information|cancellations|all prices are|powered by|see any illegal content|overview|duration|meeting point|select date|prices for)\b/i;
+	const picked = [];
+	for (const line of lines.slice(startIndex + 1)) {
+		if (stopRe.test(line)) break;
+		if (/^(details|view|buy|close)$/i.test(line)) continue;
+		picked.push(line);
+	}
+
+	const description = picked.join("\n").trim();
+	return description.length > 20 ? description : null;
+}
+
 function extractBestImageFromHtml(html, pageUrl) {
 	const title = extractTitleFromHtml(html) || "";
 
@@ -869,6 +893,7 @@ async function main() {
 					prices = availabilityEntries[0];
 				}
 				if (dom?.bodyText) bodyText = dom.bodyText;
+				if (!description || /<[^>]+>/.test(description)) description = extractDescriptionFromText(bodyText);
 				trFromText = parseEventTimeRange(bodyText || "") || parseStartTimeAndDuration(bodyText || "");
 			}
 
