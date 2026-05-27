@@ -257,6 +257,24 @@ function parseDateLabelToYmd(dateLabel) {
 	return `${y}-${mo}-${d}`;
 }
 
+function parseDateLabelToTime(dateLabel) {
+	const text = String(dateLabel || "").replaceAll(/\u00A0/g, " ");
+	const m = text.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)\b/i);
+	if (!m) return null;
+	return {
+		h: Number(m[1]),
+		m: Number(m[2] || "0"),
+		ap: normalizeAmPm(m[3]),
+	};
+}
+
+function normalizeAmPm(ap) {
+	if (!ap) return null;
+	const s = String(ap).toUpperCase().replaceAll(".", "");
+	if (s === "AM" || s === "PM") return s;
+	return null;
+}
+
 function parseEventTimeRange(html) {
 	const text = String(html || "")
 		.replaceAll(/\u00A0/g, " ")
@@ -264,22 +282,14 @@ function parseEventTimeRange(html) {
 		.trim();
 	if (!text) return null;
 
-	const normAp = (ap) => {
-		if (!ap) return null;
-		const s = String(ap).toUpperCase().replaceAll(".", "");
-		if (s === "AM" || s === "PM") return s;
-		return null;
-	};
-
-	// Match common time ranges from page text.
+	// Match ranges such as "Event is 10AM - 12PM" and "From 6-8 PM".
 	const rangeRe =
-		/(?:\bEvent\s+is\b|\bHours\b|\bTime\b|\bWhen\b|\bSchedule\b|\bDuration\b)?[^\d]{0,20}(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)?\s*(?:-|–|—|to)\s*(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)?/i;
-
+		/(?:\b(?:Event\s+is|From|Hours|Time|When|Schedule)\b[^\d]{0,20})?(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)?\s*(?:-|\u2013|\u2014|to)\s*(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)\b/i;
 	const m = text.match(rangeRe);
 	if (!m) return null;
 	const [, sh, sm, sapRaw, eh, em, eapRaw] = m;
-	let sap = normAp(sapRaw);
-	let eap = normAp(eapRaw);
+	let sap = normalizeAmPm(sapRaw);
+	let eap = normalizeAmPm(eapRaw);
 
 	// If one side is missing AM/PM, borrow it.
 	if (!sap && eap) sap = eap;
@@ -294,27 +304,12 @@ function parseEventTimeRange(html) {
 	};
 }
 
-function parseStartTimeAndDuration(text) {
+function parseDurationMinutes(text) {
 	const t = String(text || "")
 		.replaceAll(/\u00A0/g, " ")
 		.replaceAll(/\s+/g, " ")
 		.trim();
-	if (!t) return null;
-
-	const normAp = (ap) => {
-		if (!ap) return null;
-		const s = String(ap).toUpperCase().replaceAll(".", "");
-		if (s === "AM" || s === "PM") return s;
-		return null;
-	};
-
-	// Example: "6:00 PM" + "2 Hours"
-	const startM = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)\b/i);
-	if (!startM) return null;
-	const sh = Number(startM[1]);
-	const sm = Number(startM[2] || "0");
-	const sap = normAp(startM[3]);
-	if (!sap) return null;
+	if (!t) return 0;
 
 	let durationMinutes = 0;
 	const hoursM = t.match(/\b(\d+(?:\.\d+)?)\s*Hours?\b/i);
@@ -322,6 +317,25 @@ function parseStartTimeAndDuration(text) {
 	const minsM = t.match(/\b(\d{1,3})\s*Minutes?\b/i);
 	if (minsM) durationMinutes += Number(minsM[1]);
 
+	return Number.isFinite(durationMinutes) ? durationMinutes : 0;
+}
+
+function parseStartTimeAndDuration(text) {
+	const t = String(text || "")
+		.replaceAll(/\u00A0/g, " ")
+		.replaceAll(/\s+/g, " ")
+		.trim();
+	if (!t) return null;
+
+	// Example: "6:00 PM" + "2 Hours"
+	const startM = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)\b/i);
+	if (!startM) return null;
+	const sh = Number(startM[1]);
+	const sm = Number(startM[2] || "0");
+	const sap = normalizeAmPm(startM[3]);
+	if (!sap) return null;
+
+	const durationMinutes = parseDurationMinutes(t);
 	if (!durationMinutes || !Number.isFinite(durationMinutes)) return null;
 
 	const start24 = to24Hour({ h: sh, m: sm, ap: sap });
@@ -334,6 +348,21 @@ function parseStartTimeAndDuration(text) {
 
 	return {
 		start: { h: sh, m: sm, ap: sap },
+		end: { h: endHour12, m: endMinute, ap: endAp },
+	};
+}
+
+function timeRangeFromStartAndMinutes(start, minutes) {
+	const start24 = to24Hour(start);
+	const startTotal = start24.hour * 60 + start24.minute;
+	const endTotal = (startTotal + minutes) % (24 * 60);
+	const endHour24 = Math.floor(endTotal / 60);
+	const endMinute = endTotal % 60;
+	const endAp = endHour24 >= 12 ? "PM" : "AM";
+	const endHour12 = ((endHour24 + 11) % 12) + 1;
+
+	return {
+		start,
 		end: { h: endHour12, m: endMinute, ap: endAp },
 	};
 }
@@ -855,7 +884,18 @@ async function main() {
 					continue;
 				}
 
-				const tr = trFromText;
+				const availabilityStart = parseDateLabelToTime(availability.dateLabel);
+				const availabilityStartsAtMidnight =
+					availabilityStart?.h === 12 && availabilityStart?.m === 0 && availabilityStart?.ap === "AM";
+				const durationMinutes = parseDurationMinutes(bodyText || "");
+				const tr =
+					trFromText ||
+					(availabilityStart && !availabilityStartsAtMidnight && durationMinutes
+						? timeRangeFromStartAndMinutes(availabilityStart, durationMinutes)
+						: null) ||
+					(availabilityStart && !availabilityStartsAtMidnight
+						? timeRangeFromStartAndMinutes(availabilityStart, 120)
+						: null);
 				let startIso;
 				let endIso;
 				if (tr) {
