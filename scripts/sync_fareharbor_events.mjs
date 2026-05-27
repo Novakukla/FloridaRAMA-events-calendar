@@ -60,6 +60,34 @@ function extractMetaContent(html, attrName, attrValue) {
 	return m ? decodeHtmlEntities(m[1]) : null;
 }
 
+function extractAttr(tag, attrName) {
+	const re = new RegExp(`${attrName}\\s*=\\s*(["'])(.*?)\\1`, "i");
+	const m = String(tag || "").match(re);
+	return m ? decodeHtmlEntities(m[2]) : "";
+}
+
+function isGenericFareharborThumb(u) {
+	const s = String(u || "");
+	return /marketing\.fareharbor\.com\/wp-content\/uploads\//i.test(s) || /fh-og/i.test(s);
+}
+
+function isNonEventImageUrl(u) {
+	const s = String(u || "");
+	if (!s || /^data:/i.test(s)) return true;
+	if (isGenericFareharborThumb(s)) return true;
+	if (/google-reviews-stars|base64/i.test(s)) return true;
+	return false;
+}
+
+function isBookingFlowTile({ url, alt = "", className = "", title = "" }) {
+	const text = `${alt} ${className}`.toLowerCase();
+	if (/receipt-logo|company-print-logo/.test(text)) return true;
+	if (!/flow-node-tile|page tile|item tile/.test(text)) return false;
+
+	const titleText = String(title || "").trim().toLowerCase();
+	return !titleText || !String(alt || "").toLowerCase().includes(titleText);
+}
+
 function extractTitleFromHtml(html) {
 	// Try h1 first, then og:title, then title.
 	const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
@@ -87,6 +115,8 @@ function extractDescriptionFromHtml(html) {
 }
 
 function extractBestImageFromHtml(html, pageUrl) {
+	const title = extractTitleFromHtml(html) || "";
+
 	// JSON-LD usually has the real image.
 	for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
 		const txt = (m[1] || "").trim();
@@ -101,7 +131,7 @@ function extractBestImageFromHtml(html, pageUrl) {
 				if (!pick) continue;
 				try {
 					const abs = new URL(pick, pageUrl).toString();
-					if (!/marketing\.fareharbor\.com\/wp-content\/uploads\//i.test(abs) && !/fh-og/i.test(abs)) return abs;
+					if (!isNonEventImageUrl(abs)) return abs;
 				} catch {
 					// skip bad URL
 				}
@@ -117,13 +147,8 @@ function extractBestImageFromHtml(html, pageUrl) {
 		extractMetaContent(html, "property", "twitter:image") ||
 		extractMetaContent(html, "name", "twitter:image");
 
-	const isGenericFareharborThumb = (u) => {
-		const s = String(u || "");
-		return /marketing\.fareharbor\.com\/wp-content\/uploads\//i.test(s) || /fh-og/i.test(s);
-	};
-
 	// Use og/twitter if it's not the generic icon.
-	if (og && !isGenericFareharborThumb(og)) {
+	if (og && !isNonEventImageUrl(og)) {
 		try {
 			return new URL(og, pageUrl).toString();
 		} catch {
@@ -134,21 +159,29 @@ function extractBestImageFromHtml(html, pageUrl) {
 	// Try common image patterns in page HTML.
 	const candidates = [];
 
-	for (const m of html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)) {
-		candidates.push(m[1]);
+	for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
+		const tag = m[0];
+		const src = extractAttr(tag, "src");
+		if (!src) continue;
+		candidates.push({
+			url: src,
+			alt: extractAttr(tag, "alt"),
+			className: extractAttr(tag, "class"),
+		});
 	}
 	for (const m of html.matchAll(/background-image\s*:\s*url\(\s*['"]?([^'")]+)['"]?\s*\)/gi)) {
-		candidates.push(m[1]);
+		candidates.push({ url: m[1] });
 	}
 	for (const m of html.matchAll(/url\(\s*['"]?([^'")]+\.(?:png|jpe?g|webp))['"]?\s*\)/gi)) {
-		candidates.push(m[1]);
+		candidates.push({ url: m[1] });
 	}
 
 	for (const c of candidates) {
-		if (!c) continue;
-		if (isGenericFareharborThumb(c)) continue;
+		if (!c?.url) continue;
+		if (isNonEventImageUrl(c.url)) continue;
+		if (isBookingFlowTile({ ...c, title })) continue;
 		try {
-			const abs = new URL(c, pageUrl).toString();
+			const abs = new URL(c.url, pageUrl).toString();
 			return abs;
 		} catch {
 			// skip bad URL
@@ -500,6 +533,7 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 		const dom = await page.evaluate(() => {
 			const h1 = document.querySelector("h1");
 			const title = (h1?.textContent || document.title || "").trim();
+			const titleLower = title.toLowerCase();
 
 			const meta = (name, value) => {
 				const sel = `meta[${name}="${value}"]`;
@@ -508,7 +542,21 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 
 			const isGenericFareharborThumb = (u) => {
 				const s = String(u || "");
-				return s.includes("marketing.fareharbor.com/wp-content/uploads/") || s.includes("fh-og");
+				return (
+					!s ||
+					s.startsWith("data:") ||
+					s.includes("marketing.fareharbor.com/wp-content/uploads/") ||
+					s.includes("fh-og") ||
+					s.includes("google-reviews-stars") ||
+					s.includes("base64")
+				);
+			};
+
+			const isBookingFlowTile = (text) => {
+				const t = String(text || "").toLowerCase();
+				if (/receipt-logo|company-print-logo/.test(t)) return true;
+				if (!/flow-node-tile|page tile|item tile/.test(t)) return false;
+				return !titleLower || !t.includes(titleLower);
 			};
 
 			const normalizeUrl = (u) => {
@@ -560,16 +608,21 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 			for (const img of imgEls) {
 				const src = normalizeUrl(img.currentSrc || img.src || img.getAttribute("src"));
 				if (!src) continue;
+				const label = `${img.alt || ""} ${img.className || ""} ${img.parentElement?.className || ""}`;
+				if (isBookingFlowTile(label)) continue;
 				const nw = Number(img.naturalWidth || 0);
 				const nh = Number(img.naturalHeight || 0);
-				const area = nw && nh ? nw * nh : 0;
+				const rect = img.getBoundingClientRect();
+				const renderedArea = Math.max(0, rect.width) * Math.max(0, rect.height);
+				const naturalArea = nw && nh ? nw * nh : 0;
+				const area = renderedArea || Math.min(naturalArea, 20_000);
 				const inHero = Boolean(img.closest(".fh-item__image,.item-image,.hero,.gallery,.carousel,.slider"));
 				candidates.push({ url: src, score: (area || 1) + (inHero ? 5_000_000 : 0) });
 			}
 
 			// Also check background images.
 			const bgEls = Array.from(
-				document.querySelectorAll('[style*="background"],.fh-item__image,.item-image,.hero,.gallery,.carousel,.slider')
+				document.querySelectorAll('button,[style*="background"],.fh-item__image,.item-image,.hero,.gallery,.gallery-slides,.gallery-slides *,[aria-label*="photo" i],.carousel,.slider')
 			).slice(0, 120);
 			for (const el of bgEls) {
 				const cs = window.getComputedStyle(el);
@@ -579,10 +632,12 @@ async function scrapeItemViaPlaywright(context, itemUrl) {
 				if (!m) continue;
 				const src = normalizeUrl(m[1]);
 				if (!src) continue;
+				if (isGenericFareharborThumb(src)) continue;
 				const r = el.getBoundingClientRect();
 				const area = Math.max(0, r.width) * Math.max(0, r.height);
+				const inGallery = Boolean(el.closest(".gallery-slides,[aria-label='Slideshow Photos']"));
 				const inHero = el.matches(".fh-item__image,.item-image,.hero") || Boolean(el.closest(".fh-item__image,.item-image,.hero"));
-				candidates.push({ url: src, score: (area || 1) + (inHero ? 5_000_000 : 0) });
+				candidates.push({ url: src, score: (area || 1) + (inGallery ? 7_000_000 : 0) + (inHero ? 5_000_000 : 0) });
 			}
 
 			const best = candidates
