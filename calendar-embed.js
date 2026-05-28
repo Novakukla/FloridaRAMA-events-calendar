@@ -259,29 +259,16 @@
 
       eventClick: function (info) {
         var props = info.event.extendedProps;
-        var hasDesc = !!(props.description && props.description.trim());
         info.jsEvent.preventDefault();
 
-        if (hasDesc) {
-          openCalendarModal({
-            title: info.event.title,
-            start: props.originalStart || (info.event.start ? info.event.start.toISOString() : ''),
-            end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
-            thumbnail: props.thumbnail || '',
-            description: props.description || '',
-            url: info.event.url || ''
-          });
-        } else if (info.event.url) {
-          window.open(info.event.url, '_blank');
-        } else {
-          openCalendarModal({
-            title: info.event.title,
-            start: props.originalStart || (info.event.start ? info.event.start.toISOString() : ''),
-            end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
-            thumbnail: props.thumbnail || '',
-            description: props.description || ''
-          });
-        }
+        openCalendarModal({
+          title: info.event.title,
+          start: props.originalStart || (info.event.start ? info.event.start.toISOString() : ''),
+          end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
+          thumbnail: props.thumbnail || '',
+          description: props.description || '',
+          url: info.event.url || ''
+        });
       },
 
       eventContent: function (info) {
