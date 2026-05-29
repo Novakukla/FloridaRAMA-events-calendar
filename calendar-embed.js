@@ -133,12 +133,17 @@
     return sourceEvents.map(function (event) {
       var start = event.start ? new Date(event.start) : null;
       var end = event.end ? new Date(event.end) : null;
+      var prepared = Object.assign({}, event, {
+        ticketUrl: event.url || ''
+      });
+
+      delete prepared.url;
 
       if (!isValidDate(start) || !isValidDate(end) || end <= start || start.toDateString() === end.toDateString()) {
-        return event;
+        return prepared;
       }
 
-      return Object.assign({}, event, {
+      return Object.assign({}, prepared, {
         allDay: true,
         start: dateKey(start),
         end: dateKey(addDays(end, 1)),
@@ -267,7 +272,7 @@
           end: props.originalEnd || (info.event.end ? info.event.end.toISOString() : ''),
           thumbnail: props.thumbnail || '',
           description: props.description || '',
-          url: info.event.url || ''
+          url: props.ticketUrl || ''
         });
       },
 
