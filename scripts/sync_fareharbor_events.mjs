@@ -8,6 +8,8 @@ const ALLOW_EMPTY_WRITE = process.argv.includes("--allow-empty") || process.env.
 const COMPANY = process.env.FAREHARBOR_COMPANY || "floridarama";
 const FLOW = process.env.FAREHARBOR_FLOW || "1438415";
 const TIME_ZONE = process.env.FAREHARBOR_TZ || "America/New_York";
+const REQUEST_USER_AGENT =
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
 
 function getArgValue(flag) {
 	const i = process.argv.indexOf(flag);
@@ -407,13 +409,48 @@ async function fetchHtml(url) {
 	const res = await fetch(url, {
 		redirect: "follow",
 		headers: {
-			"user-agent":
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+			"user-agent": REQUEST_USER_AGENT,
 			accept: "text/html,application/xhtml+xml",
 		},
 	});
 	if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
 	return await res.text();
+}
+
+function isNaiveLocalIso(value) {
+	return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(String(value || ""));
+}
+
+function availabilityIdFromFareharborUrl(url) {
+	const m = String(url || "").match(/\/availability\/(\d+)\b/i);
+	return m ? m[1] : null;
+}
+
+async function fetchFareharborAvailabilityTimes(availabilityUrl) {
+	const itemId = itemIdFromFareharborUrl(availabilityUrl);
+	const availabilityId = availabilityIdFromFareharborUrl(availabilityUrl);
+	if (!itemId || !availabilityId) return null;
+
+	const apiUrl = `https://fareharbor.com/api/v1/companies/${encodeURIComponent(COMPANY)}/items/${encodeURIComponent(itemId)}/availabilities/${encodeURIComponent(availabilityId)}/`;
+	try {
+		const res = await fetch(apiUrl, {
+			redirect: "follow",
+			headers: {
+				"user-agent": REQUEST_USER_AGENT,
+				accept: "application/json",
+			},
+		});
+		if (!res.ok) return null;
+
+		const json = await res.json();
+		const startAt = json?.availability?.start_at || json?.start_at;
+		const endAt = json?.availability?.end_at || json?.end_at;
+		if (!isNaiveLocalIso(startAt) || !isNaiveLocalIso(endAt)) return null;
+
+		return { startAt, endAt };
+	} catch {
+		return null;
+	}
 }
 
 async function withPlaywright(fn) {
@@ -903,37 +940,44 @@ async function main() {
 			}
 
 			for (const availability of availabilityEntries) {
-				const ymd = parseDateLabelToYmd(availability.dateLabel);
-				if (!ymd) {
-					console.warn(`  Could not parse date from: ${availability.dateLabel}`);
-					continue;
-				}
-
-				const availabilityStart = parseDateLabelToTime(availability.dateLabel);
-				const availabilityStartsAtMidnight =
-					availabilityStart?.h === 12 && availabilityStart?.m === 0 && availabilityStart?.ap === "AM";
-				const durationMinutes = parseDurationMinutes(bodyText || "");
-				const tr =
-					trFromText ||
-					(availabilityStart && !availabilityStartsAtMidnight && durationMinutes
-						? timeRangeFromStartAndMinutes(availabilityStart, durationMinutes)
-						: null) ||
-					(availabilityStart && !availabilityStartsAtMidnight
-						? timeRangeFromStartAndMinutes(availabilityStart, 120)
-						: null);
 				let startIso;
 				let endIso;
-				if (tr) {
-					const s = to24Hour(tr.start);
-					const e = to24Hour(tr.end);
-					startIso = ymdAndTimeToIsoLocal(ymd, s.hour, s.minute);
-					endIso = ymdAndTimeToIsoLocal(ymd, e.hour, e.minute);
+				const availabilityUrl = normalizeFareharborUrl(availability.availabilityUrl);
+				// FareHarbor's API is the source of truth for times; description text can omit all time/duration details.
+				const apiTimes = await fetchFareharborAvailabilityTimes(availabilityUrl);
+				if (apiTimes) {
+					startIso = apiTimes.startAt;
+					endIso = apiTimes.endAt;
 				} else {
-					startIso = ymdAndTimeToIsoLocal(ymd, 10, 0);
-					endIso = ymdAndTimeToIsoLocal(ymd, 20, 0);
+					const ymd = parseDateLabelToYmd(availability.dateLabel);
+					if (!ymd) {
+						console.warn(`  Could not parse date from: ${availability.dateLabel}`);
+						continue;
+					}
+
+					const availabilityStart = parseDateLabelToTime(availability.dateLabel);
+					const availabilityStartsAtMidnight =
+						availabilityStart?.h === 12 && availabilityStart?.m === 0 && availabilityStart?.ap === "AM";
+					const durationMinutes = parseDurationMinutes(bodyText || "");
+					const tr =
+						trFromText ||
+						(availabilityStart && !availabilityStartsAtMidnight && durationMinutes
+							? timeRangeFromStartAndMinutes(availabilityStart, durationMinutes)
+							: null) ||
+						(availabilityStart && !availabilityStartsAtMidnight
+							? timeRangeFromStartAndMinutes(availabilityStart, 120)
+							: null);
+					if (tr) {
+						const s = to24Hour(tr.start);
+						const e = to24Hour(tr.end);
+						startIso = ymdAndTimeToIsoLocal(ymd, s.hour, s.minute);
+						endIso = ymdAndTimeToIsoLocal(ymd, e.hour, e.minute);
+					} else {
+						startIso = ymdAndTimeToIsoLocal(ymd, 10, 0);
+						endIso = ymdAndTimeToIsoLocal(ymd, 20, 0);
+					}
 				}
 
-				const availabilityUrl = normalizeFareharborUrl(availability.availabilityUrl);
 				scraped.push({
 					title,
 					start: startIso,
