@@ -338,6 +338,7 @@
     let currentEvents = [];
     let currentSha = null;
     let editingIndex = -1; // -1 = add mode, >= 0 = editing that index
+    let editingIdentity = null;
 
     function pad2(n)
     {
@@ -574,6 +575,38 @@
       return sameTitle && sameThumbnail && sameDescription;
     }
 
+    function eventIdentity(event)
+    {
+      if (!event) return null;
+
+      if (event.id)
+      {
+        return { id: String(event.id) };
+      }
+
+      return {
+        title: String(event.title || ''),
+        start: String(event.start || ''),
+        end: String(event.end || '')
+      };
+    }
+
+    function findEventIndexByIdentity(events, identity)
+    {
+      if (!identity) return -1;
+
+      if (identity.id)
+      {
+        return events.findIndex(event => String(event?.id || '') === identity.id);
+      }
+
+      return events.findIndex(event =>
+        String(event?.title || '') === identity.title &&
+        String(event?.start || '') === identity.start &&
+        String(event?.end || '') === identity.end
+      );
+    }
+
     function previewThumb(url)
     {
       const img = document.getElementById('thumb-preview');
@@ -612,6 +645,7 @@
       if (!ev) return;
 
       editingIndex = index;
+      editingIdentity = eventIdentity(ev);
 
       // parse date & times from ISO string
       const startDT = ev.start ? ev.start.split('T') : ['', ''];
@@ -638,6 +672,7 @@
     function cancelEdit()
     {
       editingIndex = -1;
+      editingIdentity = null;
       document.getElementById('form-heading').textContent = 'Add New Event';
       document.getElementById('add-btn').textContent = 'Add Event';
       document.getElementById('cancel-btn').style.display = 'none';
@@ -704,16 +739,38 @@
       if (btn.disabled) return;
       btn.disabled = true;
       const isEditing = editingIndex >= 0;
-      const origBtnText = isEditing ? 'Save Changes' : 'Add Event';
       btn.textContent = 'Saving…';
       setFormStatus('Saving to GitHub…', 'info');
 
       try
       {
+        const editIdentity = isEditing
+          ? (editingIdentity || eventIdentity(currentEvents[editingIndex]))
+          : null;
+
         await loadEvents(); // refresh to avoid conflicts
 
+        let resolvedEditingIndex = -1;
+        let existingEvent = null;
+        if (isEditing)
+        {
+          resolvedEditingIndex = findEventIndexByIdentity(currentEvents, editIdentity);
+          if (resolvedEditingIndex === -1)
+          {
+            renderEvents();
+            cancelEdit();
+            setFormStatus(
+              "Couldn't find that event - it may have already changed or been removed; list refreshed.",
+              'err'
+            );
+            return;
+          }
+
+          existingEvent = currentEvents[resolvedEditingIndex];
+        }
+
         const eventData = {
-          id: isEditing ? (currentEvents[editingIndex]?.id || generateId(title, date)) : generateId(title, date),
+          id: isEditing ? (existingEvent?.id || generateId(title, date)) : generateId(title, date),
           title,
           start: startDateTime,
         };
@@ -725,7 +782,7 @@
 
         if (isEditing)
         {
-          currentEvents[editingIndex] = eventData;
+          currentEvents[resolvedEditingIndex] = eventData;
           if (endDateInput && endDate !== date)
           {
             currentEvents = currentEvents.filter(ev => !isDuplicateRangeCopy(ev, eventData));
@@ -755,7 +812,7 @@
       finally
       {
         btn.disabled = false;
-        btn.textContent = origBtnText;
+        btn.textContent = editingIndex >= 0 ? 'Save Changes' : 'Add Event';
       }
     }
 
@@ -763,6 +820,7 @@
     {
       const ev = currentEvents[index];
       if (!ev) return;
+      const identity = eventIdentity(ev);
       if (!confirm(`Remove "${ev.title}"?`)) return;
 
       setFormStatus('Removing…', 'info');
@@ -770,7 +828,18 @@
       try
       {
         await loadEvents(); // refresh
-        currentEvents.splice(index, 1);
+        const refreshedIndex = findEventIndexByIdentity(currentEvents, identity);
+        if (refreshedIndex === -1)
+        {
+          renderEvents();
+          setFormStatus(
+            `Couldn't find "${ev.title || 'that event'}" - it may have already been removed; list refreshed.`,
+            'err'
+          );
+          return;
+        }
+
+        currentEvents.splice(refreshedIndex, 1);
         await saveEvents(`Remove event: ${ev.title}`);
         renderEvents();
         setFormStatus(`"${ev.title}" removed.`, 'ok');
